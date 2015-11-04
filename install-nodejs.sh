@@ -13,7 +13,7 @@ curl -sSLO "http://npm.taobao.org/mirrors/node/v$NODE_VERSION/node-v$NODE_VERSIO
     && tar -xzf "node-v$NODE_VERSION-linux-x64.tar.gz" -C /usr/local --strip-components=1 \
     && rm "node-v$NODE_VERSION-linux-x64.tar.gz"
 
-npm config set registry http://r.cnpmjs.org
+npm config set registry http://registry.npm.taobao.org
 npm install -g npm@"$NPM_VERSION" \
     && npm cache clear
 
