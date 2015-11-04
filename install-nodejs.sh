@@ -5,16 +5,16 @@ if [ "$(id -u)" != "0" ]; then
    exit 1
 fi
 
-[ -z $NODE_VERSION ] && echo set NODE_VERSION first && exit 1
-
-[ -z $NPM_VERSION ] && echo set NPM_VERSION first && exit 1
+[ -z $NODE_VERSION ] && NODE_VERSION="4.2.1"
 
 curl -sSLO "http://npm.taobao.org/mirrors/node/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.gz" \
     && tar -xzf "node-v$NODE_VERSION-linux-x64.tar.gz" -C /usr/local --strip-components=1 \
     && rm "node-v$NODE_VERSION-linux-x64.tar.gz"
 
 npm config set registry http://registry.npm.taobao.org
-npm install -g npm@"$NPM_VERSION" \
+
+[ ! -z $NODE_VERSION ] \
+    && npm install -g npm@"$NPM_VERSION" \
     && npm cache clear
 
 npm install -g node-gyp-install
