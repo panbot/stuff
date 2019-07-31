@@ -1,0 +1,16 @@
+<h1 mat-dialog-title>Event</h1>
+<div mat-dialog-content>
+  <mat-form-field>
+    <input matInput placeholder="s" type="number" [(ngModel)]="data.s">
+  </mat-form-field>
+  <mat-form-field>
+    <input matInput placeholder="t" type="number" [(ngModel)]="data.t">
+  </mat-form-field>
+  <mat-form-field>
+    <input matInput placeholder="style" [(ngModel)]="data.style">
+  </mat-form-field>
+</div>
+<div mat-dialog-actions>
+  <button mat-button (click)="cancel()">Cancel</button>
+  <button mat-button [mat-dialog-close]="data" cdkFocusInitial>Ok</button>
+</div>
