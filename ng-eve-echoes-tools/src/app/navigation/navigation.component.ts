@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { LanguageService } from '../language.service';
 
 @Component({
   selector: 'app-navigation',
@@ -7,20 +8,19 @@ import { Component, OnInit } from '@angular/core';
 })
 export class NavigationComponent implements OnInit {
 
-  languages = {
-    "en-US": {
-
-    },
-    "zh-CN": {
+  i18n = {
+    "zh": {
       "Turret Tracking": "炮台追踪",
     },
   };
   translation: any;
 
-  constructor() { }
+  constructor(
+    private languageService: LanguageService,
+  ) { }
 
   ngOnInit() {
-    this.translation = this.languages[window.navigator.language];
+    this.translation = this.i18n[this.languageService.getLanguage()];
   }
 
 }
