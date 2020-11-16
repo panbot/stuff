@@ -7,9 +7,20 @@ import { Component, OnInit } from '@angular/core';
 })
 export class NavigationComponent implements OnInit {
 
+  languages = {
+    "en-US": {
+
+    },
+    "zh-CN": {
+      "Turret Tracking": "炮台追踪",
+    },
+  };
+  translation: any;
+
   constructor() { }
 
   ngOnInit() {
+    this.translation = this.languages[window.navigator.language];
   }
 
 }
