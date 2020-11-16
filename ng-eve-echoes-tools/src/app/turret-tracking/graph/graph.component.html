@@ -1,5 +1,5 @@
 <canvas #canvas></canvas>
-<section class="fields">
+<section class="fields" [class.collapsed]="collapsed">
   <mat-card>
     <mat-card-header>
         <mat-card-title>{{ "Turrent Tracking" | translate:translation }}</mat-card-title>
@@ -56,9 +56,17 @@
       <div style="text-align:center; margin-top:20px">
         <button mat-raised-button color="primary"
                 (click)="draw()">{{ 'Draw' | translate:translation }}</button>
+
+        <button mat-raised-button color="secondary" style="margin-left:10px"
+                (click)="collapsed = true">{{ 'Close' | translate:translation }}</button>
+
       </div>
 
     </mat-card-content>
   </mat-card>
 
 </section>
+
+<button mat-icon-button (click)="collapsed = false" class="expander">
+  <mat-icon>more_vert</mat-icon>
+</button>
