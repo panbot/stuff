@@ -1,4 +1,5 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { LanguageService } from 'src/app/language.service';
 import { CanvasGraph } from './canvas-graph';
 
 @Component({
@@ -20,11 +21,8 @@ export class GraphComponent implements OnInit {
   falloff: number;
   signature: number;
 
-  languages = {
-    "en-US": {
-
-    },
-    "zh-CN": {
+  i18n = {
+    "zh": {
       "Turrent Tracking": "炮台追踪",
       "Velocity": "速率",
       "Tracking": "追踪",
@@ -44,10 +42,11 @@ export class GraphComponent implements OnInit {
 
   constructor(
     private hostRef: ElementRef<HTMLElement>,
+    private languageService: LanguageService,
   ) { }
 
   ngOnInit() {
-    this.translation = this.languages[window.navigator.language];
+    this.translation = this.i18n[this.languageService.getLanguage()];
 
     this.graph = new CanvasGraph(
       this.canvasRef.nativeElement,
