@@ -8,17 +8,22 @@ import {
   MatSliderModule,
   MatFormFieldModule,
   MatInputModule,
+  MatSelectModule,
   MatButtonModule,
   MatIconModule,
   MatCardModule,
+  MatAutocompleteModule,
 } from '@angular/material';
 import { FormsModule } from '@angular/forms';
+import { TranslateModule } from '../translate/translate.module';
 
 @NgModule({
   declarations: [GraphComponent],
   imports: [
     CommonModule,
     TurretTrackingRoutingModule,
+
+    TranslateModule,
 
     FormsModule,
 
@@ -28,6 +33,8 @@ import { FormsModule } from '@angular/forms';
     MatButtonModule,
     MatIconModule,
     MatCardModule,
+    MatSelectModule,
+    MatAutocompleteModule,
 
   ]
 })
