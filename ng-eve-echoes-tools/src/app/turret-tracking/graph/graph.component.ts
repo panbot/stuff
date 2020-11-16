@@ -10,6 +10,8 @@ export class GraphComponent implements OnInit {
   @ViewChild('canvas', { static: true })
   canvasRef: ElementRef<HTMLCanvasElement>;
 
+  collapsed = false;
+
   graph: CanvasGraph;
 
   velocity: number;
@@ -35,6 +37,7 @@ export class GraphComponent implements OnInit {
       "Battlecruiser": "战巡",
       "Battleship": "战列",
       "Draw": "绘制",
+      "Close": "关闭",
     },
   };
   translation: any;
@@ -51,6 +54,11 @@ export class GraphComponent implements OnInit {
       this.hostRef.nativeElement.clientWidth,
       this.hostRef.nativeElement.clientHeight,
     );
+
+    try {
+      let paramters = JSON.parse(localStorage.getItem('parameters'));
+      Object.assign(this, paramters);
+    } catch {}
   }
 
   draw() {
@@ -74,6 +82,18 @@ export class GraphComponent implements OnInit {
       )
     }
     this.graph.plot(dmg, 'red');
+
+    localStorage.setItem('parameters', JSON.stringify({
+      velocity: this.velocity,
+      tracking: this.tracking,
+      optimal: this.optimal,
+      falloff: this.falloff,
+      signature: this.signature,
+    }));
+
+    if (window.innerWidth < 500) {
+      this.collapsed = true;
+    }
   }
 
 }
