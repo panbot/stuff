@@ -1,0 +1,64 @@
+<canvas #canvas></canvas>
+<section class="fields">
+  <mat-card>
+    <mat-card-header>
+        <mat-card-title>{{ "Turrent Tracking" | translate:translation }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+
+      <mat-form-field>
+        <input  matInput
+                placeholder="{{ 'Velocity' | translate:translation }} (m/s)"
+                type="number"
+                [(ngModel)]="velocity"
+                autocomplete="off">
+      </mat-form-field>
+
+      <mat-form-field>
+        <input  matInput
+                placeholder="{{ 'Tracking' | translate:translation }}"
+                type="number"
+                [(ngModel)]="tracking"
+                autocomplete="off">
+      </mat-form-field>
+
+      <mat-form-field>
+        <input  matInput
+                placeholder="{{ 'Optimal Range' | translate:translation }} (km)"
+                type="number"
+                [(ngModel)]="optimal"
+                autocomplete="off">
+      </mat-form-field>
+
+      <mat-form-field>
+        <input  matInput
+                placeholder="{{ 'Accuracy Falloff' | translate:translation }} (km)"
+                type="number"
+                [(ngModel)]="falloff"
+                autocomplete="off">
+      </mat-form-field>
+
+      <mat-form-field>
+        <input type="number"
+               placeholder="{{ 'Target Signature Radius' | translate:translation }} (m)"
+               matInput
+               [(ngModel)]="signature"
+               [matAutocomplete]="targets">
+        <mat-autocomplete #targets="matAutocomplete">
+          <mat-option value="35">{{ "Frigate" | translate:translation }} (35m)</mat-option>
+          <mat-option value="60">{{ "Destroyer" | translate:translation }} (60m)</mat-option>
+          <mat-option value="100">{{ "Cruiser" | translate:translation }} (100m)</mat-option>
+          <mat-option value="250">{{ "Battlecruiser" | translate:translation }} (250m)</mat-option>
+          <mat-option value="320">{{ "Battleship" | translate:translation }} (320m)</mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+
+      <div style="text-align:center; margin-top:20px">
+        <button mat-raised-button color="primary"
+                (click)="draw()">{{ 'Draw' | translate:translation }}</button>
+      </div>
+
+    </mat-card-content>
+  </mat-card>
+
+</section>
