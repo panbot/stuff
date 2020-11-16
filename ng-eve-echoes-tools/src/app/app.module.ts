@@ -7,6 +7,7 @@ import { TurretTrackingModule } from './turret-tracking/turret-tracking.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatButtonModule, MatIconModule, MatListModule, MatMenuModule } from '@angular/material';
 import { NavigationComponent } from './navigation/navigation.component';
+import { TranslateModule } from './translate/translate.module';
 
 @NgModule({
   declarations: [
@@ -18,6 +19,8 @@ import { NavigationComponent } from './navigation/navigation.component';
     AppRoutingModule,
 
     TurretTrackingModule,
+
+    TranslateModule,
 
     MatButtonModule,
     MatIconModule,
