@@ -5,7 +5,6 @@ import { TurretTrackingRoutingModule } from './turret-tracking-routing.module';
 import { GraphComponent } from './graph/graph.component';
 
 import {
-  MatSliderModule,
   MatFormFieldModule,
   MatInputModule,
   MatSelectModule,
@@ -27,7 +26,6 @@ import { TranslateModule } from '../translate/translate.module';
 
     FormsModule,
 
-    MatSliderModule,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
