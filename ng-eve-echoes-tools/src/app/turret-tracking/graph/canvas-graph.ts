@@ -118,7 +118,7 @@ export class CanvasGraph {
       const { x, y } = this.transform(0, s);
       let text = `${s}%`;
       let mesure = this.ctx.measureText(text);
-      this.ctx.fillText(`${s}%`, x - mesure.width - 2, y + mesure.actualBoundingBoxAscent / 2);
+      this.ctx.fillText(text, x - mesure.width - 2, y + mesure.actualBoundingBoxAscent / 2);
     }
 
     this.ctx.restore();

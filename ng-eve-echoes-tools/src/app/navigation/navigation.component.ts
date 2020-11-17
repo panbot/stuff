@@ -11,6 +11,7 @@ export class NavigationComponent implements OnInit {
   i18n = {
     "zh": {
       "Turret Tracking": "炮台追踪",
+      "Capacitor Recharge": "电容充能",
     },
   };
   translation: any;
