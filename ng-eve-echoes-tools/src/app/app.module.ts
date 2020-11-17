@@ -8,6 +8,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatButtonModule, MatIconModule, MatListModule, MatMenuModule } from '@angular/material';
 import { NavigationComponent } from './navigation/navigation.component';
 import { TranslateModule } from './translate/translate.module';
+import { CapacitorRechargeModule } from './capacitor-recharge/capacitor-recharge.module';
 
 @NgModule({
   declarations: [
@@ -19,6 +20,7 @@ import { TranslateModule } from './translate/translate.module';
     AppRoutingModule,
 
     TurretTrackingModule,
+    CapacitorRechargeModule,
 
     TranslateModule,
 
