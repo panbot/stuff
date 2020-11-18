@@ -48,16 +48,32 @@
         </mat-select>
       </mat-form-field>
 
-      <p>Final Capacity: {{ finalCap }} GJ</p>
-      <p>Final Recharge Time: {{ finalTime }} s</p>
+      <p>Final Capacity: {{ final?.cap | number:"1.0-0" }} GJ</p>
+      <p>Final Recharge Time: {{ final?.time | number:"1.0-0" }} s</p>
 
       <div style="text-align:center; margin-top:20px">
         <button mat-raised-button color="primary"
-                (click)="draw()">{{ 'Draw' | translate:translation }}</button>
+                (click)="drawRecharge()">{{ 'Draw Recharge vs. %' | translate:translation }}</button>
+      </div>
 
+      <mat-form-field style="margin-top:10px">
+        <input  matInput
+                placeholder="{{ 'Consumption Rate' | translate:translation }} (GJ/s)"
+                type="number"
+                [(ngModel)]="consumption"
+                autocomplete="off">
+      </mat-form-field>
+
+      <div style="text-align:center; margin-top:5px">
+        <button mat-raised-button color="primary"
+                (click)="drawConsumption()"
+                [disabled]="!consumption"
+                >{{ 'Draw Consumption' | translate:translation }}</button>
+      </div>
+
+      <div style="text-align:center; margin-top:20px">
         <button mat-raised-button color="secondary" style="margin-left:10px"
                 (click)="collapsed = true">{{ 'Close' | translate:translation }}</button>
-
       </div>
 
     </mat-card-content>
