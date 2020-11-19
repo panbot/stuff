@@ -34,7 +34,7 @@ export class GraphComponent implements OnInit {
       "Cruiser": "巡洋",
       "Battlecruiser": "战巡",
       "Battleship": "战列",
-      "Draw": "绘制",
+      "Plot": "绘制",
       "Close": "关闭",
     },
   };

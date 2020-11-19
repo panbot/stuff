@@ -44,12 +44,41 @@ export class GraphComponent implements OnInit {
 
   storeKey = 'capacitor-recharge-parameters';
 
+  i18n = {
+    "zh": {
+      "Capacity Recharge": "电容充能",
+      "Ship Capacity": "舰船电容容量",
+      "Ship Recharge Time": "舰船充能时长",
+      "Total Cap Bonus From Skills": "总技能容量加成",
+      "Rig Slot": "改装位",
+      "Final Capacity": "最终电容容量",
+      "Final Recharge Time": "最终充能时长",
+      "No Rigs": "无",
+      "SMC Prototype": "电池原型",
+      "SMC I": "电池I",
+      "SMC II": "电池II",
+      "SMC III": "电池II",
+      "CCC Prototype": "电路原型",
+      "CCC I": "电路I",
+      "CCC II": "电路II",
+      "CCC III": "电路III",
+      "Plot Recharge vs. %": "绘制充电速率",
+      "Plot Consumption": "绘制消耗",
+      "Consumption Rate": "消耗速率",
+
+      "Close": "关闭",
+    },
+  };
+  translation: any;
+
   constructor(
     private hostRef: ElementRef<HTMLElement>,
     private languageService: LanguageService,
   ) { }
 
   ngOnInit() {
+    this.translation = this.i18n[this.languageService.getLanguage()];
+
     this.graph = new CanvasGraph(
       this.canvasRef.nativeElement,
       this.hostRef.nativeElement.clientWidth,
