@@ -19,8 +19,12 @@ export class GraphComponent implements OnInit {
   rig2: number;
   rig3: number;
 
-  finalCap: number;
-  finalTime: number;
+  consumption: number;
+
+  final: {
+    cap: number,
+    time: number,
+  }
 
   collapsed = false;
 
@@ -40,12 +44,41 @@ export class GraphComponent implements OnInit {
 
   storeKey = 'capacitor-recharge-parameters';
 
+  i18n = {
+    "zh": {
+      "Capacity Recharge": "电容充能",
+      "Ship Capacity": "舰船电容容量",
+      "Ship Recharge Time": "舰船充能时长",
+      "Total Cap Bonus From Skills": "总技能容量加成",
+      "Rig Slot": "改装位",
+      "Final Capacity": "最终电容容量",
+      "Final Recharge Time": "最终充能时长",
+      "No Rigs": "无",
+      "SMC Prototype": "电池原型",
+      "SMC I": "电池I",
+      "SMC II": "电池II",
+      "SMC III": "电池II",
+      "CCC Prototype": "电路原型",
+      "CCC I": "电路I",
+      "CCC II": "电路II",
+      "CCC III": "电路III",
+      "Plot Recharge vs. %": "绘制充电速率",
+      "Plot Consumption": "绘制消耗",
+      "Consumption Rate": "消耗速率",
+
+      "Close": "关闭",
+    },
+  };
+  translation: any;
+
   constructor(
     private hostRef: ElementRef<HTMLElement>,
     private languageService: LanguageService,
   ) { }
 
   ngOnInit() {
+    this.translation = this.i18n[this.languageService.getLanguage()];
+
     this.graph = new CanvasGraph(
       this.canvasRef.nativeElement,
       this.hostRef.nativeElement.clientWidth,
@@ -58,30 +91,25 @@ export class GraphComponent implements OnInit {
     } catch {}
   }
 
-  draw() {
-    let cap = this.capacity;
+  drawRecharge() {
+    this.calculate();
+    let { cap, time } = this.final;
 
-    if (this.skills) cap += this.capacity * this.skills / 100;
+    this.graph.clear();
+    this.graph.setAxes(
+      {
+        range: 100,
+        unit: '%',
+      },
+      {
+        range: cap / time * 3,
+        unit: ' GJ/s'
+      },
+    );
+    this.graph.drawGrid();
 
-    if (this.rig1 > 0) cap += this.capacity * this.rig1 / 100;
-    if (this.rig2 > 0) cap += this.capacity * this.rig2 / 100;
-    if (this.rig3 > 0) cap += this.capacity * this.rig3 / 100;
-
-    this.finalCap = Math.floor(cap);
-
-    let time = this.time;
-
-    if (this.rig1 < 0) time *= 1 + this.rig1 / 100;
-    if (this.rig2 < 0) time *= 1 + this.rig2 / 100;
-    if (this.rig3 < 0) time *= 1 + this.rig3 / 100;
-
-    this.finalTime = Math.floor(time);
-
-    let recharge = (p: number) => 10 * cap / time * (Math.sqrt(p / 100) - p / 100);
-
-    this.graph.plot(
-      { x: 100, y: cap / time * 3 },
-      recharge,
+    this.graph.plotFunction(
+      (p: number) => this.getRechargeRate(p / 100 * cap, cap, time),
       'red',
     );
 
@@ -93,11 +121,75 @@ export class GraphComponent implements OnInit {
       rig2: this.rig2,
       rig3: this.rig3,
     }));
+  }
 
+  drawConsumption() {
+    this.calculate();
+
+    let data: XY[] = [];
+
+    for (let t = 0, c = this.final.cap; t <= 3600; ++t) {
+      data.push({ x: t, y: c } );
+
+      let rechage = this.getRechargeRate(c, this.final.cap, this.final.time);
+      let c1 = c + rechage - this.consumption;
+      if (c1 < 0) break;
+
+      c = c1;
+    }
+
+    this.graph.clear();
+
+    this.graph.setAxes(
+      {
+        range: data[data.length - 1].x,
+        unit: ' s',
+      },
+      {
+        range: this.final.cap,
+        unit: ' GJ'
+      },
+    );
+
+    this.graph.drawGrid();
+
+    this.graph.plotData(data, 'red');
+  }
+
+  getRechargeRate(current: number, capacity: number, time: number) {
+    let p = current / capacity;
+    return 10 * capacity / time * (Math.sqrt(p) - p);
+  }
+
+  private calculate() {
+    let cap = this.capacity;
+
+    if (this.skills) cap += this.capacity * this.skills / 100;
+
+    if (this.rig1 > 0) cap += this.capacity * this.rig1 / 100;
+    if (this.rig2 > 0) cap += this.capacity * this.rig2 / 100;
+    if (this.rig3 > 0) cap += this.capacity * this.rig3 / 100;
+
+    let time = this.time;
+
+    if (this.rig1 < 0) time *= 1 + this.rig1 / 100;
+    if (this.rig2 < 0) time *= 1 + this.rig2 / 100;
+    if (this.rig3 < 0) time *= 1 + this.rig3 / 100;
+
+    this.final = {
+      cap,
+      time,
+    }
   }
 }
 
 type XY = { x: number, y: number };
+
+type Axis = {
+  step: number;
+  unit: string;
+  range: number;
+}
 
 class CanvasGraph {
 
@@ -113,17 +205,26 @@ class CanvasGraph {
   gridWidth: number;
   gridHeight: number;
 
-  axis = {
+  axis: {
+    font: string,
+    fontStyle: string,
+    gridStyle: string,
+    x: Axis,
+    y: Axis,
+  } = {
     font: '12px',
     fontStyle: 'rgb(100, 100, 100)',
     gridStyle: 'rgba(200, 200, 200, 0.5)',
-    majorStepX: 1,
-    majorStepY: 1,
-  };
-
-  range: XY = {
-    x: 100,
-    y: 100,
+    x: {
+      step: 1,
+      unit: '',
+      range: 100,
+    },
+    y: {
+      step: 1,
+      unit: '',
+      range: 100,
+    },
   };
 
   constructor(
@@ -151,16 +252,20 @@ class CanvasGraph {
     this.gridHeight = height - this.paddingTop - this.paddingBottom;
   }
 
-  plot(range: XY, func: (r: number) => number, style: string) {
-    this.range = range;
+  setAxes(x: Partial<Axis>, y: Partial<Axis>) {
+    Object.assign(this.axis.x, x);
+    Object.assign(this.axis.y, y);
 
-    this.clear();
-    this.drawGrid();
+    let mag = Math.floor(Math.log10(this.axis.y.range));
+    let scale = Math.pow(10, mag);
+    this.axis.y.range = Math.ceil(this.axis.y.range / scale) * scale;
+  }
 
-    let step = this.range.x / this.gridWidth;
+  plotFunction(func: (r: number) => number, style: string) {
+    let step = this.axis.x.range / this.gridWidth;
     let sMax = -Infinity;
     let rMax: number;
-    for (let r0 = 0; r0 < this.range.x; r0 += step) {
+    for (let r0 = 0; r0 <= this.axis.x.range; r0 += step) {
       let s0 = func(r0);
       if (s0 > sMax) {
         sMax = s0;
@@ -180,8 +285,18 @@ class CanvasGraph {
       this.transform(rMax, sMax),
       3,
       style,
-      `${rMax.toFixed(1)}%, ${sMax.toFixed(2)} GJ/s`,
+      `${rMax.toFixed(1)}${this.axis.x.unit}, ${sMax.toFixed(2)}${this.axis.y.unit}`,
     );
+  }
+
+  plotData(data: XY[], style: string) {
+    for (let i = 0; i < data.length - 1; ++i) {
+      this.lineXY(
+        this.transform(data[i].x, data[i].y),
+        this.transform(data[i + 1].x, data[i + 1].y),
+        style,
+      );
+    }
   }
 
   clear() {
@@ -193,19 +308,19 @@ class CanvasGraph {
     this.findMajorStepY();
 
     // vertical lines
-    for (let x = 0 ; x <= this.range.x; x += this.axis.majorStepX) {
+    for (let x = 0 ; x <= this.axis.x.range; x += this.axis.x.step) {
       this.lineXY(
         this.transform(x, 0),
-        this.transform(x, this.range.y),
+        this.transform(x, this.axis.y.range),
         this.axis.gridStyle,
       );
     }
 
     // horizontal lines
-    for (let y = 0; y <= this.range.y; ++y) {
+    for (let y = 0; y <= this.axis.y.range; y += this.axis.y.step) {
       this.lineXY(
         this.transform(0, y),
-        this.transform(this.range.x, y),
+        this.transform(this.axis.x.range, y),
         this.axis.gridStyle,
       );
     }
@@ -214,18 +329,22 @@ class CanvasGraph {
     this.ctx.fillStyle = this.axis.fontStyle;
     this.ctx.font = this.axis.font;
 
-    for (let x = 0; x < this.range.x; x += this.axis.majorStepX) {
+    for (let x = 0; x <= this.axis.x.range; x += this.axis.x.step) {
       const pos = this.transform(x, 0);
-      let text = `${x}%`;
+      let text = `${x}${this.axis.x.unit}`;
       let measure = this.ctx.measureText(text);
       this.ctx.fillText(text, pos.x, pos.y + measure.actualBoundingBoxAscent + 2);
     }
 
-    for (let y = 0; y < this.range.y; y += this.axis.majorStepY) {
+    for (let y = 0; y <= this.axis.y.range; y += this.axis.y.step) {
       const pos = this.transform(0, y);
-      let text = `${y} GJ/s`;
+      let text = `${y}${this.axis.y.unit}`;
       let measure = this.ctx.measureText(text);
-      this.ctx.fillText(text, pos.x - measure.width - 2, pos.y + measure.actualBoundingBoxAscent / 2);
+      this.ctx.fillText(
+        text,
+        pos.x - measure.width - 2,
+        pos.y + measure.actualBoundingBoxAscent / 2,
+      );
 
     }
 
@@ -234,8 +353,8 @@ class CanvasGraph {
 
   transform(r: number, s: number): XY {
     return {
-      x: this.origin.x + r / this.range.x * this.gridWidth,
-      y: this.origin.y - s / this.range.y * this.gridHeight,
+      x: this.origin.x + r / this.axis.x.range * this.gridWidth,
+      y: this.origin.y - s / this.axis.y.range * this.gridHeight,
     }
   }
 
@@ -277,8 +396,8 @@ class CanvasGraph {
 
     let size = this.ctx.measureText('100%').width;
     let step = 1;
-    for (; this.range.x / step * size > this.gridWidth; step *= 10);
-    this.axis.majorStepX = step;
+    for (; this.axis.x.range / step * size > this.gridWidth; step *= 10);
+    this.axis.x.step = step;
     this.ctx.restore();
   }
 
@@ -286,10 +405,10 @@ class CanvasGraph {
     this.ctx.save();
     this.ctx.font = this.axis.font;
 
-    let size = this.ctx.measureText('GJ/s').actualBoundingBoxAscent;
+    let size = this.ctx.measureText('GJ/s').actualBoundingBoxAscent * 5;
     let step = 1;
-    for (; this.range.y / step * size > this.gridHeight; step *= 10);
-    this.axis.majorStepY = step;
+    for (; this.axis.y.range / step * size > this.gridHeight; step *= 10);
+    this.axis.y.step = step;
     this.ctx.restore();
   }
 }
