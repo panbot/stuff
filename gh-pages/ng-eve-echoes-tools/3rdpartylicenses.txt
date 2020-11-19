@@ -99,6 +99,8 @@ THE SOFTWARE.
 
 @angular/material/list
 
+@angular/material/select
+
 @angular/platform-browser
 MIT
 
