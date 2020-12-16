@@ -1,5 +1,6 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { LanguageService } from 'src/app/language.service';
+import { PlotCanvas } from 'src/app/plot-canvas';
 
 @Component({
   templateUrl: './graph.component.html',
@@ -10,7 +11,7 @@ export class GraphComponent implements OnInit {
   @ViewChild('canvas', { static: true })
   canvasRef: ElementRef<HTMLCanvasElement>;
 
-  graph: CanvasGraph;
+  plot: PlotCanvas;
 
   capacity: number;
   time: number;
@@ -79,7 +80,7 @@ export class GraphComponent implements OnInit {
   ngOnInit() {
     this.translation = this.i18n[this.languageService.getLanguage()];
 
-    this.graph = new CanvasGraph(
+    this.plot = new PlotCanvas(
       this.canvasRef.nativeElement,
       this.hostRef.nativeElement.clientWidth,
       this.hostRef.nativeElement.clientHeight,
@@ -95,20 +96,24 @@ export class GraphComponent implements OnInit {
     this.calculate();
     let { cap, time } = this.final;
 
-    this.graph.clear();
-    this.graph.setAxes(
-      {
-        range: 100,
+    this.plot.clear();
+    this.plot.setAxes({
+      h: {
+        range: [ 0, 100 ],
         unit: '%',
+        step: 1,
+        resolution: 1,
       },
-      {
-        range: cap / time * 3,
-        unit: ' GJ/s'
+      v: {
+        range: [ 0, Math.ceil(cap / time * 3) ],
+        unit: ' GJ/s',
+        step: 1,
+        resolution: 1,
       },
-    );
-    this.graph.drawGrid();
+    });
+    this.plot.drawGrid();
 
-    this.graph.plotFunction(
+    this.plot.plotFunction(
       (p: number) => this.getRechargeRate(p / 100 * cap, cap, time),
       'red',
     );
@@ -126,34 +131,38 @@ export class GraphComponent implements OnInit {
   drawConsumption() {
     this.calculate();
 
-    let data: XY[] = [];
+    let data: { h: number, v: number }[] = [];
 
-    for (let t = 0, c = this.final.cap; t <= 3600; ++t) {
-      data.push({ x: t, y: c } );
+    for (let h = 0, v = this.final.cap; h <= 3600; ++h) {
+      data.push({ h, v } );
 
-      let rechage = this.getRechargeRate(c, this.final.cap, this.final.time);
-      let c1 = c + rechage - this.consumption;
+      let rechage = this.getRechargeRate(v, this.final.cap, this.final.time);
+      let c1 = v + rechage - this.consumption;
       if (c1 < 0) break;
 
-      c = c1;
+      v = c1;
     }
 
-    this.graph.clear();
+    this.plot.clear();
 
-    this.graph.setAxes(
-      {
-        range: data[data.length - 1].x,
+    this.plot.setAxes({
+      h: {
+        range: [ 0, data[data.length - 1].h ],
         unit: ' s',
+        step: 1,
+        resolution: 1,
       },
-      {
-        range: this.final.cap,
-        unit: ' GJ'
+      v: {
+        range: [ 0, this.final.cap ],
+        unit: ' GJ',
+        step: 1,
+        resolution: 1,
       },
-    );
+    });
 
-    this.graph.drawGrid();
+    this.plot.drawGrid();
 
-    this.graph.plotData(data, 'red');
+    this.plot.plotData(data, 'red');
   }
 
   getRechargeRate(current: number, capacity: number, time: number) {
@@ -180,235 +189,5 @@ export class GraphComponent implements OnInit {
       cap,
       time,
     }
-  }
-}
-
-type XY = { x: number, y: number };
-
-type Axis = {
-  step: number;
-  unit: string;
-  range: number;
-}
-
-class CanvasGraph {
-
-  ctx: CanvasRenderingContext2D;
-
-  origin: XY;
-
-  paddingTop = 30;
-  paddingRight = 30;
-  paddingLeft = 50;
-  paddingBottom = 30;
-
-  gridWidth: number;
-  gridHeight: number;
-
-  axis: {
-    font: string,
-    fontStyle: string,
-    gridStyle: string,
-    x: Axis,
-    y: Axis,
-  } = {
-    font: '12px',
-    fontStyle: 'rgb(100, 100, 100)',
-    gridStyle: 'rgba(200, 200, 200, 0.5)',
-    x: {
-      step: 1,
-      unit: '',
-      range: 100,
-    },
-    y: {
-      step: 1,
-      unit: '',
-      range: 100,
-    },
-  };
-
-  constructor(
-    public canvas: HTMLCanvasElement,
-    public width: number,
-    public height: number,
-  ) {
-    this.origin = {
-      x: this.paddingLeft,
-      y: height - this.paddingBottom,
-    };
-
-    this.ctx = canvas.getContext('2d');
-
-    const dpr = window.devicePixelRatio || 1;
-
-    this.canvas.width = this.width * dpr;
-    this.canvas.style.width = this.width + 'px';
-    this.canvas.height = this.height * dpr;
-    this.canvas.style.height = this.height + 'px';
-
-    this.ctx.scale(dpr, dpr);
-
-    this.gridWidth = width - this.paddingLeft - this.paddingRight;
-    this.gridHeight = height - this.paddingTop - this.paddingBottom;
-  }
-
-  setAxes(x: Partial<Axis>, y: Partial<Axis>) {
-    Object.assign(this.axis.x, x);
-    Object.assign(this.axis.y, y);
-
-    let mag = Math.floor(Math.log10(this.axis.y.range));
-    let scale = Math.pow(10, mag);
-    this.axis.y.range = Math.ceil(this.axis.y.range / scale) * scale;
-  }
-
-  plotFunction(func: (r: number) => number, style: string) {
-    let step = this.axis.x.range / this.gridWidth;
-    let sMax = -Infinity;
-    let rMax: number;
-    for (let r0 = 0; r0 <= this.axis.x.range; r0 += step) {
-      let s0 = func(r0);
-      if (s0 > sMax) {
-        sMax = s0;
-        rMax = r0;
-      }
-      let r1 = r0 + step;
-      let s1 = func(r1);
-
-      this.lineXY(
-        this.transform(r0, s0),
-        this.transform(r1, s1),
-        style,
-      );
-    }
-
-    this.dotXY(
-      this.transform(rMax, sMax),
-      3,
-      style,
-      `${rMax.toFixed(1)}${this.axis.x.unit}, ${sMax.toFixed(2)}${this.axis.y.unit}`,
-    );
-  }
-
-  plotData(data: XY[], style: string) {
-    for (let i = 0; i < data.length - 1; ++i) {
-      this.lineXY(
-        this.transform(data[i].x, data[i].y),
-        this.transform(data[i + 1].x, data[i + 1].y),
-        style,
-      );
-    }
-  }
-
-  clear() {
-    this.ctx.clearRect(0, 0, this.width, this.height);
-  }
-
-  drawGrid() {
-    this.findMajorStepX();
-    this.findMajorStepY();
-
-    // vertical lines
-    for (let x = 0 ; x <= this.axis.x.range; x += this.axis.x.step) {
-      this.lineXY(
-        this.transform(x, 0),
-        this.transform(x, this.axis.y.range),
-        this.axis.gridStyle,
-      );
-    }
-
-    // horizontal lines
-    for (let y = 0; y <= this.axis.y.range; y += this.axis.y.step) {
-      this.lineXY(
-        this.transform(0, y),
-        this.transform(this.axis.x.range, y),
-        this.axis.gridStyle,
-      );
-    }
-
-    this.ctx.save();
-    this.ctx.fillStyle = this.axis.fontStyle;
-    this.ctx.font = this.axis.font;
-
-    for (let x = 0; x <= this.axis.x.range; x += this.axis.x.step) {
-      const pos = this.transform(x, 0);
-      let text = `${x}${this.axis.x.unit}`;
-      let measure = this.ctx.measureText(text);
-      this.ctx.fillText(text, pos.x, pos.y + measure.actualBoundingBoxAscent + 2);
-    }
-
-    for (let y = 0; y <= this.axis.y.range; y += this.axis.y.step) {
-      const pos = this.transform(0, y);
-      let text = `${y}${this.axis.y.unit}`;
-      let measure = this.ctx.measureText(text);
-      this.ctx.fillText(
-        text,
-        pos.x - measure.width - 2,
-        pos.y + measure.actualBoundingBoxAscent / 2,
-      );
-
-    }
-
-    this.ctx.restore();
-  }
-
-  transform(r: number, s: number): XY {
-    return {
-      x: this.origin.x + r / this.axis.x.range * this.gridWidth,
-      y: this.origin.y - s / this.axis.y.range * this.gridHeight,
-    }
-  }
-
-  lineXY(from: XY, to: XY, style: any) {
-    this.ctx.save();
-
-    this.ctx.beginPath();
-    this.ctx.moveTo(from.x, from.y);
-    this.ctx.lineTo(to.x, to.y);
-    this.ctx.closePath();
-    this.ctx.strokeStyle = style;
-    this.ctx.stroke();
-
-    this.ctx.restore();
-  }
-
-  dotXY(xy: XY, size: number, style: any, text?: string) {
-    this.ctx.save();
-
-    const { x, y } = xy;
-
-    this.ctx.beginPath();
-    this.ctx.arc(x, y, size, 0, 2 * Math.PI);
-    this.ctx.closePath();
-    this.ctx.fillStyle = style;
-    this.ctx.fill();
-
-    if (text) {
-      this.ctx.strokeStyle = style;
-      this.ctx.strokeText(text, x + 2, y - 5);
-    }
-
-    this.ctx.restore();
-  }
-
-  private findMajorStepX() {
-    this.ctx.save();
-    this.ctx.font = this.axis.font;
-
-    let size = this.ctx.measureText('100%').width;
-    let step = 1;
-    for (; this.axis.x.range / step * size > this.gridWidth; step *= 10);
-    this.axis.x.step = step;
-    this.ctx.restore();
-  }
-
-  private findMajorStepY() {
-    this.ctx.save();
-    this.ctx.font = this.axis.font;
-
-    let size = this.ctx.measureText('GJ/s').actualBoundingBoxAscent * 5;
-    let step = 1;
-    for (; this.axis.y.range / step * size > this.gridHeight; step *= 10);
-    this.axis.y.step = step;
-    this.ctx.restore();
   }
 }
