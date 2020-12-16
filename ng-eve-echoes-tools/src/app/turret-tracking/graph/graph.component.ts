@@ -1,6 +1,6 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { LanguageService } from 'src/app/language.service';
-import { CanvasGraph } from './canvas-graph';
+import { PlotCanvas } from '../../plot-canvas';
 
 @Component({
   templateUrl: './graph.component.html',
@@ -13,7 +13,7 @@ export class GraphComponent implements OnInit {
 
   collapsed = false;
 
-  graph: CanvasGraph;
+  plot: PlotCanvas;
 
   velocity: number;
   tracking: number;
@@ -35,7 +35,7 @@ export class GraphComponent implements OnInit {
       "Battlecruiser": "战巡",
       "Battleship": "战列",
       "Plot": "绘制",
-      "Close": "关闭",
+      "Hide": "隐藏",
     },
   };
   translation: any;
@@ -48,7 +48,7 @@ export class GraphComponent implements OnInit {
   ngOnInit() {
     this.translation = this.i18n[this.languageService.getLanguage()];
 
-    this.graph = new CanvasGraph(
+    this.plot = new PlotCanvas(
       this.canvasRef.nativeElement,
       this.hostRef.nativeElement.clientWidth,
       this.hostRef.nativeElement.clientHeight,
@@ -61,26 +61,41 @@ export class GraphComponent implements OnInit {
   }
 
   draw() {
-    this.graph.clear();
-
-    this.graph.drawGrid(this.optimal + 3 * this.falloff);
+    this.plot
+      .clear()
+      .setAxes({
+        h: {
+          step: 1,
+          range: [ 0, this.optimal + 3 * this.falloff ],
+          unit: 'km',
+          resolution: 1,
+        },
+        v: {
+          step: 5,
+          range: [ 0, 100 ],
+          unit: '%',
+          resolution: 1,
+        },
+      })
+      .drawGrid()
+    ;
 
     let hitChance = (range: number) => {
       let a = 40 * this.velocity / range / this.tracking / this.signature;
       let b = Math.max(0, range - this.optimal) / this.falloff;
 
-      return Math.pow(0.5, a * a + b * b)
+      return Math.pow(0.5, a * a + b * b) * 100;
     }
-    this.graph.plot(hitChance, 'lightblue');
+    this.plot.plotFunction(hitChance, 'lightblue');
 
     let dmg = (range: number) => {
-      let chance = hitChance(range);
+      let chance = hitChance(range) / 100;
       return 0.5 * Math.min(
         chance * chance + 0.98 * chance + 0.0501,
         6 * chance
-      )
+      ) * 100
     }
-    this.graph.plot(dmg, 'red');
+    this.plot.plotFunction(dmg, 'red');
 
     localStorage.setItem('parameters', JSON.stringify({
       velocity: this.velocity,
