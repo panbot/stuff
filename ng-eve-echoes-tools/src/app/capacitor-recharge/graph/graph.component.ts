@@ -67,7 +67,7 @@ export class GraphComponent implements OnInit {
       "Plot Consumption": "绘制消耗",
       "Consumption Rate": "消耗速率",
 
-      "Close": "关闭",
+      "Hide": "隐藏",
     },
   };
   translation: any;
