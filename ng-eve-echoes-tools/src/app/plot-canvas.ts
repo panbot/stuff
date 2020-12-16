@@ -54,7 +54,7 @@ export class PlotCanvas {
     },
   };
 
-  upscale = 4;
+  upscale = 1;
 
   constructor(
     public canvas: HTMLCanvasElement,
