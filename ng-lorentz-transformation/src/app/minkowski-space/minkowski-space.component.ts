@@ -15,7 +15,6 @@ import { EventDialogComponent, EventDialogData } from '../event-dialog/event-dia
 import { TravellerDialogComponent, TravellerDialogData } from '../traveller-dialog/traveller-dialog.component';
 import { OffsetDialogComponent, OffsetDialogData } from '../offset-dialog/offset-dialog.component';
 import { ScenarioDialogComponent, ScenarioDialogData } from '../scenario-dialog/scenario-dialog.component';
-import * as scenarios from './scenarios';
 
 export type MinkowskiSpaceEvent = {
   st: ST,
@@ -30,7 +29,6 @@ export type MinkowskiSpaceTraveller = {
 }
 
 export type MinkowskiSpaceScenario = {
-  name: string,
   events?: MinkowskiSpaceEvent[],
   travellers?: MinkowskiSpaceTraveller[],
 }

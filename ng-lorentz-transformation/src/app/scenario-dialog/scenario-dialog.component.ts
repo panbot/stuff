@@ -1,6 +1,6 @@
 import { Component, OnInit, Inject } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material';
-import * as scenarios from '../minkowski-space/scenarios';
+import scenarios from '../minkowski-space/scenarios';
 import { MinkowskiSpaceScenario } from '../minkowski-space/minkowski-space.component';
 
 export type ScenarioDialogData = {
@@ -19,8 +19,8 @@ export class ScenarioDialogComponent implements OnInit {
     @Inject(MAT_DIALOG_DATA)
     public data: ScenarioDialogData,
   ) {
-    for (let key of Object.keys(scenarios)) {
-      this.scenarios.push(scenarios[key]);
+    for (let name of Object.keys(scenarios)) {
+      this.scenarios.push({ name, ...scenarios[name] });
     }
   }
 
