@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "hemes-capsule-hole-pattern-maker": {
+    "ng-capsule-shaped-hole-pattern-maker": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -17,7 +17,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
-            "outputPath": "dist/hemes-capsule-hole-pattern-maker",
+            "outputPath": "dist/ng-capsule-shaped-hole-pattern-maker",
             "index": "src/index.html",
             "main": "src/main.ts",
             "polyfills": "src/polyfills.ts",
@@ -70,10 +70,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "browserTarget": "hemes-capsule-hole-pattern-maker:build:production"
+              "browserTarget": "ng-capsule-shaped-hole-pattern-maker:build:production"
             },
             "development": {
-              "browserTarget": "hemes-capsule-hole-pattern-maker:build:development"
+              "browserTarget": "ng-capsule-shaped-hole-pattern-maker:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -81,7 +81,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "hemes-capsule-hole-pattern-maker:build"
+            "browserTarget": "ng-capsule-shaped-hole-pattern-maker:build"
           }
         },
         "test": {

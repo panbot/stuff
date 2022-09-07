@@ -8,7 +8,7 @@ type Pos = [ number, number ];
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit {
-  title = 'hemes-capsule-hole-pattern-maker';
+  title = 'ng-capsule-shaped-hole-pattern-maker';
 
   capsule = {
     length: 30,
