@@ -25,7 +25,7 @@ module.exports = function (config) {
       suppressAll: true // removes the duplicated traces
     },
     coverageReporter: {
-      dir: require('path').join(__dirname, './coverage/hemes-capsule-hole-pattern-maker'),
+      dir: require('path').join(__dirname, './coverage/ng-capsule-shaped-hole-pattern-maker'),
       subdir: '.',
       reporters: [
         { type: 'html' },
