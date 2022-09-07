@@ -62,7 +62,8 @@ export class MinkowskiSpaceComponent implements OnInit {
   constructor(
     private hostRef: ElementRef<HTMLElement>,
     private dialog: MatDialog,
-  ) { }
+  ) {
+  }
 
   ngOnInit() {
     this.view = new CanvasView(
@@ -208,8 +209,8 @@ export class MinkowskiSpaceComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result: ScenarioDialogData) => {
       let { events, travellers } = result.scenario;
-      this.events = [].concat(events || []);
-      this.travellers = [].concat(travellers || []);
+      this.events = [ ...events ];
+      this.travellers = [ ...travellers ];
 
       this.redraw();
     });

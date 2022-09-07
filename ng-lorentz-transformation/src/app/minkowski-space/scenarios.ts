@@ -47,4 +47,25 @@ export default {
         ]
     },
 
-} as  Record<string, MinkowskiSpaceScenario>;
+    "bell's paradox": (() => {
+        let s = 5;
+        let t = 10;
+        let velocity = 0.6;
+        let style = 'blue';
+
+        return {
+            events: [
+                { st: st( s, t), style },
+                { st: st(-s, t), style },
+                { st: st(-s, t - s * 2 * velocity), style },
+            ],
+            travellers: [
+                { origin: st( s, 0), destination: st( s, t), velocity: 0, style },
+                { origin: st(-s, 0), destination: st(-s, t), velocity: 0, style },
+                { origin: st( s, t), velocity, style },
+                { origin: st(-s, t), velocity, style },
+            ],
+        }
+    })(),
+
+} as Record<string, MinkowskiSpaceScenario>;

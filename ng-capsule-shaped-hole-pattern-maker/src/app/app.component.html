@@ -1,0 +1,43 @@
+<section class="preview">
+  <canvas #canvas></canvas>
+</section>
+
+<section class="fields">
+
+  <mat-form-field>
+    <mat-label>Capsule Length</mat-label>
+    <input matInput [(ngModel)]="capsule.length" (ngModelChange)="redraw()" type="number" placeholder="">
+    <span matSuffix>mm</span>
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>Capsule Width</mat-label>
+    <input matInput [(ngModel)]="capsule.width" (ngModelChange)="redraw()" type="number" placeholder="">
+    <span matSuffix>mm</span>
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>Hole Offset</mat-label>
+    <input matInput [(ngModel)]="capsule.offset" (ngModelChange)="redraw()" type="number" placeholder="">
+    <span matSuffix>mm</span>
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>Hole Count</mat-label>
+    <input matInput [(ngModel)]="capsule.holes" (ngModelChange)="redraw()" type="number" placeholder="">
+    <span matSuffix>mm</span>
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>Tooth Width</mat-label>
+    <input matInput [(ngModel)]="capsule.tooth" (ngModelChange)="redraw()" type="number" placeholder="">
+    <span matSuffix>mm</span>
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>Tooth Angle</mat-label>
+    <input matInput [(ngModel)]="capsule.angle" (ngModelChange)="redraw()" type="number" placeholder="">
+    <span matSuffix>deg</span>
+  </mat-form-field>
+
+</section>
