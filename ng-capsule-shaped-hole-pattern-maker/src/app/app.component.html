@@ -2,7 +2,14 @@
   <canvas #canvas></canvas>
 </section>
 
-<section class="fields">
+<section #fields class="fields">
+
+  <div style="text-align: center; padding-bottom: 20px;">
+    <mat-button-toggle-group [value]="mode" (change)="onModeChange($event.value)">
+      <mat-button-toggle value="preview">Preview</mat-button-toggle>
+      <mat-button-toggle value="print">Print</mat-button-toggle>
+    </mat-button-toggle-group>
+  </div>
 
   <mat-form-field>
     <mat-label>Capsule Length</mat-label>

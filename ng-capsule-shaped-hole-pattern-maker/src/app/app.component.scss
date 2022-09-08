@@ -7,6 +7,8 @@
 .fields {
     padding-top: 20px;
     flex: 0 0 250px;
+    flex-grow: 0;
+    flex-shrink: 0;
 }
 
 .preview {
