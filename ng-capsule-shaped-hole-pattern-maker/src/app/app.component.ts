@@ -10,6 +10,8 @@ type Pos = [ number, number ];
 export class AppComponent implements OnInit {
   title = 'ng-capsule-shaped-hole-pattern-maker';
 
+  mode = 'preview';
+
   capsule = {
     length: 30,
     width: 7,
@@ -22,42 +24,58 @@ export class AppComponent implements OnInit {
   @ViewChild('canvas', { static: true })
   canvasRef?: ElementRef<HTMLCanvasElement>;
 
-  ppm = 10; // pixels per millimeter
-
-  // center?: Pos;
+  @ViewChild('fields', { static: true })
+  formRef?: ElementRef<HTMLCanvasElement>;
 
   constructor(
+    private hostRef: ElementRef<HTMLElement>,
   ) {}
 
   async ngOnInit() {
+    this.redraw();
+    window.addEventListener('resize', () => this.redraw());
+  }
 
-    // let width = 210 * 600 / 25.4;
-    // let height = 296 * 600 / 25.4;
-
-    // let width = this.hostRef.nativeElement.clientWidth;
-    // let height = this.hostRef.nativeElement.clientHeight;
-
-    // this.PxPerMm = width / 210;
-
-    // this.center = [ width / 2 / this.PxPerMm, height / 2 / this.PxPerMm ];
+  onModeChange(mode: string) {
+    this.mode = mode;
 
     this.redraw();
-
-    window.addEventListener('resize', () => this.redraw());
   }
 
   redraw() {
     const canvas = this.canvasRef?.nativeElement;
     if (!canvas) return;
 
-    let drawable = new Drawable(
-      canvas,
-      [
-        canvas.parentElement!.clientWidth,
-        canvas.parentElement!.clientHeight,
-      ],
-      this.ppm,
-    );
+    let width = this.hostRef.nativeElement.clientWidth - (this.formRef?.nativeElement.clientWidth || 0);
+    let height = this.hostRef.nativeElement.clientHeight;
+
+    let size: [ number, number ];
+    let ppm: number;
+    switch (this.mode) {
+      case 'print':
+      ppm = 150 / 25.4;
+      size = [
+        210 * ppm,
+        297 * ppm,
+      ];
+      if (width / height >= 210 / 297) {
+        canvas.style.width = 'unset';
+        canvas.style.height = '100%';
+      } else {
+        canvas.style.width = '100%';
+        canvas.style.height = 'unset';
+      }
+      break;
+
+      case 'preview':
+      default:
+      ppm = 10;
+      size = [ width, height ];
+      canvas.style.width = size[0] + 'px';
+      canvas.style.height = size[1] + 'px';
+    }
+
+    let drawable = new Drawable(canvas, size, ppm);
 
     drawable.clear();
 
@@ -72,11 +90,11 @@ export class AppComponent implements OnInit {
 
     // scale marker
     {
-      let pos: Pos = [ 10, 10 ];
+      let pos: Pos = [ 10, 20 ];
       drawable.line(pos, [ pos[0] + 10, pos[1] ], style);
       drawable.line(pos, [ pos[0], pos[1] - 1 ], style);
       drawable.line([ pos[0] + 10, pos[1] ], [ pos[0] + 10, pos[1] - 1 ], style);
-      drawable.text('1cm', [ pos[0] + 5, pos[1] - 2 ], [ 'center', 'bottom' ], [ 0, 0 ], '16px "courier new', style);
+      drawable.text('1cm', [ pos[0] + 5, pos[1] - 2 ], [ 'center', 'bottom' ], [ 0, 0 ], '15px "courier new"', style);
     }
 
     // two verticle lines
@@ -195,8 +213,62 @@ export class AppComponent implements OnInit {
         }
       }
 
-
     }
+
+    if (this.mode == 'print') {
+      const style = '#000';
+      let w = size[0] / ppm;
+      let h = size[1] / ppm;
+
+      const lineHeight = 3;
+      const lineWidth = 30;
+      const anchor: Pos = [ w - 3, 1 ];
+
+      let line: Pos = [ anchor[0], anchor[1] + lineHeight ];
+
+      const text = (label: string, value: string | number, unit: string) => {
+        let font = '12px "courier new"';
+        let align = [ 'right', 'bottom' ] as [ CanvasTextAlign, CanvasTextBaseline ];
+        let offset: Pos = [ 0, 0 ];
+
+        drawable.text(unit, line, align, offset, font, style);
+        drawable.text(`${value}`, [ line[0] - 5, line[1] ], align, offset, font, style);
+        drawable.text(label + ': ', [ line[0] - lineWidth, line[1] ], [ 'left', 'bottom' ], offset, font, style);
+
+        drawable.line(
+          [
+            line[0],
+            line[1],
+          ],
+          [
+            line[0] - lineWidth,
+            line[1],
+          ],
+          style,
+        )
+      }
+
+      text('paper size', 'A4', '');
+
+      line[1] += lineHeight;
+      text('capsule length', this.capsule.length, 'mm');
+
+      line[1] += lineHeight;
+      text('capsule width', this.capsule.width, 'mm');
+
+      line[1] += lineHeight;
+      text('hole offset', this.capsule.offset, 'mm');
+
+      line[1] += lineHeight;
+      text('hole count', this.capsule.holes, '');
+
+      line[1] += lineHeight;
+      text('tooth width', this.capsule.tooth, 'mm');
+
+      line[1] += lineHeight;
+      text('tooth angle', this.capsule.angle, 'deg');
+    }
+
   }
 }
 
@@ -226,9 +298,7 @@ class Drawable {
     let [ width, height ] = size;
 
     canvas.width = width * scale;
-    canvas.style.width = width + 'px';
     canvas.height = height * scale;
-    canvas.style.height = height + 'px';
 
     ctx.scale(scale, scale);
   }
