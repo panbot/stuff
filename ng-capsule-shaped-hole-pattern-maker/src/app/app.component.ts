@@ -33,6 +33,7 @@ export class AppComponent implements OnInit {
 
   async ngOnInit() {
     this.redraw();
+
     window.addEventListener('resize', () => this.redraw());
   }
 
@@ -60,9 +61,9 @@ export class AppComponent implements OnInit {
       ];
       if (width / height >= 210 / 297) {
         canvas.style.width = 'unset';
-        canvas.style.height = '100%';
+        canvas.style.height = height + 'px';
       } else {
-        canvas.style.width = '100%';
+        canvas.style.width = width + 'px';
         canvas.style.height = 'unset';
       }
       break;

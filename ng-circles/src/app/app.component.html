@@ -1,0 +1,8 @@
+<div class="controls">
+  <mat-slider [min]="min" [max]="max" [step]="step" style="width: 50%">
+    <input matSliderThumb [(ngModel)]="inner_ticks" (ngModelChange)="redraw()" />
+  </mat-slider>
+
+  <span>{{ inner_ticks }}</span>
+</div>
+<canvas #canvas></canvas>
