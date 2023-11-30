@@ -1,0 +1,37 @@
+<section class="preview">
+  <canvas #canvas></canvas>
+</section>
+
+<section #fields class="fields">
+
+  <mat-form-field>
+    <mat-label>Radius</mat-label>
+    <input matInput [(ngModel)]="radius" (ngModelChange)="redraw()" type="number" placeholder="">
+    <span matTextSuffix>mm</span>
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>Angle</mat-label>
+    <input matInput [(ngModel)]="angle" (ngModelChange)="redraw()" type="number" placeholder="">
+    <span matTextSuffix>deg</span>
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>dy</mat-label>
+    <input matInput [(ngModel)]="dy" (ngModelChange)="redraw()" type="number" placeholder="">
+    <span matTextSuffix>mm</span>
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>dx</mat-label>
+    <input matInput [(ngModel)]="dx" (ngModelChange)="redraw()" type="number" placeholder="">
+    <span matTextSuffix>mm</span>
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>Width</mat-label>
+    <input matInput [(ngModel)]="width" (ngModelChange)="redraw()" type="number" placeholder="">
+    <span matTextSuffix>mm</span>
+  </mat-form-field>
+
+</section>
