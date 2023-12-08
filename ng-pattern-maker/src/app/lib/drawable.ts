@@ -6,24 +6,50 @@ export class Drawable {
 
     public ctx: CanvasRenderingContext2D;
 
+    public width: {
+        px: number,
+        mm: number,
+    };
+    public height: {
+        px: number,
+        mm: number,
+    };
+
+    get ppm() {
+        return this.dpi / 25.4;
+    }
+
+    get font_scale() {
+        return this.dpi / 150;
+    }
+
     constructor(
         public canvas: HTMLCanvasElement,
-        public size: [ number, number ], // width, height
-        public ppm: number, // pixels per millimeter
+        public width_mm: number,
+        public height_mm: number,
+        public dpi: number,
+        public scale: number,
     ) {
         this.ctx = canvas.getContext('2d') ?? bail('2d context not supported');
 
-        const scale = window.devicePixelRatio || 1;
-        let [ width, height ] = size;
+        this.width = {
+            mm: width_mm,
+            px: width_mm * this.ppm,
+        };
 
-        canvas.width = width * scale;
-        canvas.height = height * scale;
+        this.height = {
+            mm: height_mm,
+            px: height_mm * this.ppm,
+        };
 
-        this.ctx.setTransform(scale, 0, 0, scale, width / 2 * scale, height / 2 * scale);
+        canvas.width  = this.width.px;
+        canvas.height = this.height.px;
+
+        this.ctx.setTransform(scale, 0, 0, scale, this.width.px / 2 * scale, this.height.px / 2 * scale);
     }
 
     clear() {
-        let [ w, h ] = this.size;
+        let w = this.width.px, h = this.height.px;
 
         let region = [
             -0.5 * w,
@@ -97,9 +123,9 @@ export class Drawable {
         ctx.arc(
             ...xy(pos),
             radius * ppm,
-            start_angle.radian,
-            end_angle.radian,
-            end_angle.radian < start_angle.radian,
+            Math.PI * 2 - start_angle.radian,
+            Math.PI * 2 - end_angle.radian,
+            true,
         );
         ctx.stroke();
     }
@@ -108,23 +134,41 @@ export class Drawable {
         text: string,
         pos: Vector2,
         options?: {
-            size?: string,
+            size?: number,
             font?: string,
             align?: CanvasTextAlign,
             valign?: CanvasTextBaseline,
         },
     ) {
-        const { ctx } = this;
+        return this.session(() => {
+            const { ctx } = this;
 
-        ctx.save();
-        ctx.font = options?.size ?? `${ options?.size ?? '15px' } "${ options?.font ?? 'courier new' }"`;
-        ctx.textAlign = options?.align ?? 'center';
-        ctx.textBaseline = options?.valign ?? 'bottom';
+            ctx.font = `${ (options?.size ?? 15) * this.font_scale }px "${ options?.font ?? 'courier new' }"`;
+            ctx.textAlign = options?.align ?? 'center';
+            ctx.textBaseline = options?.valign ?? 'bottom';
 
-        let [ x, y ] = this.xy(pos);
-        this.ctx.fillText(text, x, y);
+            let [ x, y ] = this.xy(pos);
+            this.ctx.fillText(text, x, y);
 
-        this.ctx.restore();
+            let measure = this.ctx.measureText(text);
+            let coef = 1 / this.ppm;
+
+            return {
+                width: measure.width * coef,
+            }
+        })
+    }
+
+    session<T>(cb: (drawable: Drawable) => T) {
+        this.ctx.save();
+
+        try {
+            return cb(this);
+        } catch (e) {
+            throw e;
+        } finally {
+            this.ctx.restore();
+        }
     }
 
     private xy = (v: Vector2): [ number, number ] => {

@@ -5,50 +5,17 @@
 </section>
 <section #fields class="fields">
 
-  <!-- <mat-button-toggle-group [(ngModel)]="mode" (ngModelChange)="redraw()">
-    <mat-button-toggle value="preview">Preview</mat-button-toggle>
-    <mat-button-toggle value="print">Print</mat-button-toggle>
-  </mat-button-toggle-group> -->
-
-  <mat-form-field style="margin-top: 30px;">
-    <mat-label>Start Angle</mat-label>
-    <input matInput [ngModel]="query.start_angle" (ngModelChange)="change_params('start_angle', $event)" type="number" placeholder="">
-    <span matTextSuffix>deg</span>
-  </mat-form-field>
-
   <mat-form-field>
-    <mat-label>Start length</mat-label>
-    <input matInput [ngModel]="query.start_length" (ngModelChange)="change_params('start_length', $event)" type="number" placeholder="">
-    <span matTextSuffix>mm</span>
+    <mat-label>Choose a pattern</mat-label>
+    <mat-select [ngModel]="selected_pattern_name" (ngModelChange)="change_pattern($event)">
+      <mat-option *ngFor="let entry of pattern_entries" [value]="entry[0]">{{ entry[0] }}</mat-option>
+    </mat-select>
   </mat-form-field>
 
-  <mat-form-field>
-    <mat-label>Angle 1</mat-label>
-    <input matInput [ngModel]="query.angle1" (ngModelChange)="change_params('angle1', $event)" type="number" placeholder="">
-    <span matTextSuffix>deg</span>
+  <mat-form-field *ngFor="let field of pattern?.fields">
+    <mat-label>{{ field.label }}</mat-label>
+    <input matInput [ngModel]="query[field.name]" (ngModelChange)="change_params(field.name, $event)" type="number" [placeholder]="field.place_holder ?? ''">
+    <span matTextSuffix>{{ field.unit }}</span>
   </mat-form-field>
 
-  <mat-form-field>
-    <mat-label>Radius 1</mat-label>
-    <input matInput [ngModel]="query.radius1" (ngModelChange)="change_params('radius1', $event)" type="number" placeholder="">
-    <span matTextSuffix>mm</span>
-  </mat-form-field>
-
-  <mat-form-field>
-    <mat-label>Radius 2</mat-label>
-    <input matInput [ngModel]="query.radius2" (ngModelChange)="change_params('radius2', $event)" type="number" placeholder="">
-    <span matTextSuffix>mm</span>
-  </mat-form-field>
-
-  <mat-form-field>
-    <mat-label>Neck Length</mat-label>
-    <input matInput [ngModel]="query.neck_length" (ngModelChange)="change_params('neck_length', $event)" type="number" placeholder="">
-    <span matTextSuffix>mm</span>
-  </mat-form-field>
-
-  <mat-form-field>
-    <mat-label>Flip</mat-label>
-    <input matInput [ngModel]="query.flip" (ngModelChange)="change_params('flip', $event)" type="number" placeholder="">
-    <span matTextSuffix>pts</span>
-  </mat-form-field>
 </section>

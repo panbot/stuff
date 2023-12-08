@@ -95,12 +95,17 @@ export class Vector2 {
         )
     }
 
-    get_components(rotation: Angle) {
-        let rotated = this.rotate(rotation);
-        return {
-            x: Vector2.cartesion(rotated.x, 0).rotate(Angle.degree(-rotation.degree)),
-            y: Vector2.cartesion(0, rotated.y).rotate(Angle.degree(-rotation.degree)),
-        }
+    flip_x() {
+        return Vector2.cartesion(this.x, -this.y);
+    }
+
+    flip_y() {
+        return Vector2.cartesion(-this.x, this.y);
+    }
+
+    mirror(from: Vector2, to: Vector2) {
+        let v = this.subtract(from);
+        return v.rotate(v.theta.subtract(to.subtract(from).theta).scale(-2)).add(from);
     }
 
     static cartesion(x: number, y: number) {

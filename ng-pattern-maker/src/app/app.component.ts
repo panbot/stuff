@@ -3,98 +3,97 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterOutlet } from '@angular/router';
 import { Drawable } from './lib/drawable';
 import { MatInputModule } from '@angular/material/input';
-import {MatButtonToggleModule} from '@angular/material/button-toggle';
-import {MAT_FORM_FIELD_DEFAULT_OPTIONS, MatFormFieldModule} from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { MAT_FORM_FIELD_DEFAULT_OPTIONS, MatFormFieldModule } from '@angular/material/form-field';
 import { FormsModule } from '@angular/forms';
+import { PatternMaker } from './patterns';
+import ear_pattern from './patterns/ear';
+import badge_holder from './patterns/badge-holder';
 import { Vector2 } from './lib/vector2';
-import { Angle } from './lib/angle';
-import { bail } from './lib/error';
+import calibration from './patterns/calibration';
+import capsule_hole from './patterns/capsule';
 
 @Component({
-  selector: 'app-root',
-  standalone: true,
-  imports: [
-    CommonModule,
-    RouterOutlet,
+    selector: 'app-root',
+    standalone: true,
+    imports: [
+        CommonModule,
+        RouterOutlet,
 
-    FormsModule,
-    MatButtonToggleModule,
-    MatInputModule,
-    MatFormFieldModule,
-  ],
-  templateUrl: './app.component.html',
-  styleUrl: './app.component.scss',
-  providers: [
-    {provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: {appearance: 'outline'}}
-  ],
+        FormsModule,
+        MatSelectModule,
+        MatInputModule,
+        MatFormFieldModule,
+    ],
+    templateUrl: './app.component.html',
+    styleUrl: './app.component.scss',
+    providers: [
+        { provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: { appearance: 'outline' } }
+    ],
 })
 export class AppComponent implements OnInit {
-  title = 'ng-pattern-maker';
+    title = 'ng-pattern-maker';
 
-  @ViewChild('canvas', { static: true })
-  canvasRef?: ElementRef<HTMLCanvasElement>;
+    @ViewChild('canvas', { static: true })
+    canvasRef?: ElementRef<HTMLCanvasElement>;
 
-  @ViewChild('fields', { static: true })
-  formRef?: ElementRef<HTMLCanvasElement>;
+    @ViewChild('fields', { static: true })
+    formRef?: ElementRef<HTMLCanvasElement>;
 
-  mode: 'print' | 'preview' = 'print';
+    patterns: Record<string, PatternMaker> = {
+        'Ear': ear_pattern,
+        'Badge Holder': badge_holder,
+        'Capsule Hole': capsule_hole,
+        'Calibration': calibration,
+    };
 
-  query: Record<
-    'start_angle' |
-    'start_length' |
-    'angle1' |
-    'radius1' |
-    'radius2' |
-    'neck_length' |
-    'flip',
-    number
-  > = {
-    start_angle: 30,
-    start_length: 5,
-    angle1: 97,
-    radius1: 40,
-    radius2: 44,
-    neck_length: 6,
-    flip: 44,
-  };
+    pattern_entries = Object.entries(this.patterns);
+    selected_pattern_name?: string;
+    pattern?: PatternMaker;
+    query: any = {};
 
-  constructor(
-    private router: Router,
-    private route: ActivatedRoute,
-  ) { }
+    constructor(
+        private router: Router,
+        private route: ActivatedRoute,
+    ) {
+    }
 
-  ngOnInit() {
-    this.route.queryParams.subscribe((params: any) => {
-      this.query.start_angle = parseFloat(params.start_angle ?? this.query.start_angle);
-      this.query.start_length = parseFloat(params.start_length ?? this.query.start_length);
-      this.query.angle1 = parseFloat(params.angle1 ?? this.query.angle1);
-      this.query.radius1 = parseFloat(params.radius1 ?? this.query.radius1);
-      this.query.radius2 = parseFloat(params.radius2 ?? this.query.radius2);
-      this.query.neck_length = parseFloat(params.neck_length ?? this.query.neck_length);
-      this.query.flip = parseFloat(params.flip ?? this.query.flip);
+    ngOnInit() {
+        this.route.queryParams.subscribe((params: any) => {
+            let pattern = this.pattern = this.patterns[params.pattern];
+            this.query = {};
 
-      this.redraw();
-    });
+            if (!pattern) {
+                this.redraw();
+                this.selected_pattern_name = undefined;
+                return;
+            }
 
-    window.addEventListener('resize', () => this.redraw());
-  }
+            this.selected_pattern_name = params.pattern;
 
-  redraw() {
-    const canvas = this.canvasRef?.nativeElement;
-    const container = canvas?.parentElement;
-    if (!canvas || !container) return;
+            for (let field of pattern.fields) {
+                this.query[field.name]
+                    = params[field.name] != null
+                    ? parseFloat(params[field.name])
+                    : field.default_value
+                ;
+            }
 
-    let size: [ number, number ];
-    let ppm: number;
-    switch (this.mode) {
-        case 'print':
-        ppm = 150 / 25.4; // 150 dpi
-        size = [
-            210 * ppm,
-            297 * ppm,
-        ];
-        let ratio = size[0] / size[1];
-        canvas.style.aspectRatio = `${ ratio }`;
+            this.redraw();
+        });
+
+        window.addEventListener('resize', () => this.redraw());
+    }
+
+    redraw() {
+        const canvas = this.canvasRef?.nativeElement;
+        const container = canvas?.parentElement;
+        if (!canvas || !container) return;
+
+        let dpi = 300;
+        let size = Vector2.cartesion(210, 297);
+        let ratio = size.x / size.y;
+        canvas.style.aspectRatio = `${ratio}`;
         if (container.clientWidth / container.clientHeight >= ratio) {
             canvas.style.width = 'unset';
             canvas.style.height = '100%';
@@ -102,160 +101,71 @@ export class AppComponent implements OnInit {
             canvas.style.width = '100%';
             canvas.style.height = 'unset';
         }
-        break;
 
-        case 'preview':
-        default:
-        ppm = 3;
-        size = [ container.clientWidth, container.clientHeight ];
-        canvas.style.width = '100%';
-        canvas.style.height = '100%';
+        let drawable = new Drawable(canvas, size.x, size.y, dpi, size.y / 289);
+        drawable.clear();
+
+        if (!this.pattern) return;
+
+        this.pattern.draw(drawable, this.query);
+
+        {
+            let top_left = Vector2.cartesion(-size.x / 2 + 2, size.y / 2 - 1);
+            drawable.line(top_left, top_left.add(Vector2.x(300)));
+            drawable.line(top_left, top_left.add(Vector2.y(-300)));
+            for (let i = 0; i < 300; ++i) {
+                let size = (() => {
+                    if (i % 10 == 0) {
+                        return 3;
+                    } else if (i % 5 == 0) {
+                        return 2;
+                    } else {
+                        return 1;
+                    }
+                })();
+                drawable.line(top_left.add(Vector2.x( i)), top_left.add(Vector2.x( i)).add(Vector2.y(-size)));
+                drawable.line(top_left.add(Vector2.y(-i)), top_left.add(Vector2.y(-i)).add(Vector2.x( size)));
+            }
+        }
+
+        {
+            let top_right = Vector2.cartesion(size.x / 2, size.y / 2).add(Vector2.cartesion(-5, -5));
+            let line_end = top_right.add(Vector2.x(-10));
+
+            for (let f of this.pattern.fields) {
+                print_spec(f.label, this.query[f.name], f.unit);
+            }
+
+            function print_spec(field: string, value: any, unit?: string) {
+                line_end = line_end.add(Vector2.y(-5));
+                if (unit) drawable.text(unit, line_end.add(Vector2.x(2)), { align: 'left', valign: 'bottom' });
+                drawable.text(field + ':', line_end.add(Vector2.x(-20)), { align: 'right', valign: 'bottom' });
+                drawable.text(value.toString(), line_end, { align: 'right', valign: 'bottom' });
+                drawable.ctx.save();
+                drawable.ctx.strokeStyle = 'gray';
+                drawable.line(line_end, line_end.add(Vector2.x(-20)));
+                drawable.ctx.restore();
+            }
+        }
     }
 
-    let drawable = new Drawable(canvas, size, ppm);
-    drawable.clear();
-
-    const base = Vector2.y(-100);
-    let verticies: Vector2[] = [
-      base,
-    ];
-    let peek = (
-      cb?: (v: Vector2) => void,
-    ) => {
-      let v = verticies[verticies.length - 1] ?? bail('not found');
-      cb?.(v);
-      return v;
-    }
-    let pairs = function*() {
-      for (let i = 0; i < verticies.length - 1; ++i) {
-        yield [ verticies[i]!, verticies[i + 1]! ] satisfies [ Vector2, Vector2 ]
-      }
-    }
-    let last = Vector2.zero;;
-    let go = (distance: number, turn: Angle) => {
-      last = Vector2.polar(distance, last.theta.add(turn));
-      let v = peek().add(last);
-      verticies.push(v);
-      return v;
-    }
-    let goto = (v: Vector2) => {
-      last = v.subtract(peek());
-      verticies.push(v);
+    change_params(field: any, value: any) {
+        (this.query as any)[field] = value;
+        this.update_router();
     }
 
-    const { start_angle, start_length, angle1, radius1, radius2, neck_length, flip } = this.query;
-    const end_angle = start_angle + angle1;
-
-    go(start_length, Angle.degree(start_angle));
-
-    let max_x = Vector2.zero;
-    for (let i = 0; i < end_angle - start_angle; ++i) {
-      let v = go(Angle.degree(1).radian * radius1, Angle.degree(1));
-      if (v.x > max_x.x) max_x = v;
-    }
-    drawable.text(`${ (max_x.x * 2).toFixed(1) } mm`, Vector2.cartesion(0, max_x.y));
-
-    for (let i = 0; i < end_angle - 90; ++i) {
-      go(Angle.degree(1).radian * radius2, Angle.degree(-1));
+    change_pattern(name: string) {
+        this.selected_pattern_name = name;
+        this.query = {};
+        this.update_router();
     }
 
-    go(neck_length / 2, Angle.zero);
-
-    peek(v => {
-      let v_mirror = v.add(Vector2.cartesion(-v.x * 2, 0));
-      drawable.line(v, v_mirror);
-      drawable.text(
-        `${ (v.x * 2).toFixed(1) } mm`,
-        v.add(Vector2.cartesion(10, 0)),
-        { valign: 'middle' },
-      );
-
-      {
-        let from = Vector2.cartesion(50, base.y);
-        let to = Vector2.cartesion(from.x, v.y)
-        drawable.line(from, to);
-        drawable.text(`${ (to.y - from.y).toFixed(2) } mm`, from.add(to).scale(0.5));
-      }
-
-      drawable.ctx.save();
-      drawable.ctx.strokeStyle = 'green';
-      drawable.line(v, v.add(Vector2.cartesion(0, -50)));
-      drawable.line(v_mirror, v_mirror.add(Vector2.cartesion(0, -50)));
-      drawable.ctx.restore();
-
-      let to_add: Vector2[] = [];
-      for (let i = 0; i < flip; ++i) {
-        let m = verticies[verticies.length - 1 - i];
-        if (!m) break;
-        to_add.push(Vector2.cartesion(m.x, v.y + v.y - m.y));
-      }
-      verticies = verticies.concat(to_add);
-    });
-
-    goto(Vector2.cartesion(1, peek().y));
-
-    for (let i = verticies.length - 1;; --i) {
-      let v = verticies[i];
-      if (!v) break;
-      verticies.push(Vector2.cartesion(-v.x, v.y));
+    update_router() {
+        this.router.navigate([], {
+            queryParams: {
+                pattern: this.selected_pattern_name,
+                ...this.query,
+            }
+        });
     }
-
-    drawable.trace(verticies);
-
-    {
-      drawable.ctx.save();
-
-      drawable.ctx.strokeStyle = 'green';
-      let list: Vector2[] = [];
-      for (let [ a, b ] of pairs()) {
-        let p = b.subtract(a).rotate(Angle.degree(90)).scale_to(5);
-        list.push(a.add(p));
-        list.push(b.add(p));
-      }
-      drawable.trace(list);
-
-      drawable.ctx.restore();
-    }
-
-    if (this.mode == 'print') {
-      let top_right = Vector2.cartesion(210 / 2, 297 / 2);
-      let start = top_right.add(Vector2.cartesion(-20, -10));
-      let line_end = start.add(Vector2.cartesion(10, 0));
-
-      let height = Vector2.cartesion(0, 2);
-      drawable.line(start, line_end);
-      drawable.line(start, start.add(height));
-      drawable.line(line_end, line_end.add(height));
-
-      drawable.text('1cm', start.add(line_end).scale(0.5).add(height));
-      line_end = line_end.add(Vector2.y(-2));
-
-      print_spec( 'Start Angle'  , start_angle  , 'deg' );
-      print_spec( 'Start Length' , start_length , 'mm'  );
-      print_spec( 'Angle 1'      , angle1       , 'deg' );
-      print_spec( 'Radius 1'     , radius1      , 'mm'  );
-      print_spec( 'Radius 2'     , radius2      , 'mm'  );
-      print_spec( 'Nect Length'  , neck_length  , 'mm'  );
-      print_spec( 'flip'         , flip         , 'pts' );
-
-
-      function print_spec(field: string, value: any, unit?: string) {
-        line_end = line_end.add(Vector2.y(-5));
-        if (unit) drawable.text(unit, line_end.add(Vector2.x(2)), { align: 'left', valign: 'bottom' });
-        drawable.text(field + ':', line_end.add(Vector2.x(-20)), { align: 'right', valign: 'bottom' });
-        drawable.text(value.toString(), line_end, { align: 'right', valign: 'bottom' });
-        drawable.ctx.save();
-        drawable.ctx.strokeStyle = 'gray';
-        drawable.line(line_end, line_end.add(Vector2.x(-20)));
-        drawable.ctx.restore();
-      }
-    }
-  }
-
-  change_params(field: any, value: any) {
-    (this.query as any)[field] = value;
-    this.router.navigate([], {
-      queryParams: this.query,
-    })
-  }
 }

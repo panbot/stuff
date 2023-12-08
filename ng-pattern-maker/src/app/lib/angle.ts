@@ -16,7 +16,7 @@ export class Angle {
     }
 
     get normalized_degree() {
-        return (this.degree % 360 + 360) % 360;
+        return this.normalize().degree;
     }
 
     add(b: Angle) {
@@ -37,6 +37,10 @@ export class Angle {
             center += Math.PI;
         }
         return Angle.radian(center);
+    }
+
+    normalize() {
+        return Angle.degree((this.degree % 360 + 360) % 360)
     }
 
     static radian(radian: number) {
