@@ -60,31 +60,31 @@ const ear_pattern: PatternMaker<FIELDS> = {
 
         const base = Vector2.y(0);
 
-        let verticies: Vector2[] = [
+        let vertices: Vector2[] = [
             base,
         ];
         let peek = (
             cb?: (v: Vector2) => void,
         ) => {
-            let v = verticies[verticies.length - 1] ?? bail('not found');
+            let v = vertices[vertices.length - 1] ?? bail('not found');
             cb?.(v);
             return v;
         }
         let pairs = function* () {
-            for (let i = 0; i < verticies.length - 1; ++i) {
-                yield [verticies[i]!, verticies[i + 1]!] satisfies [Vector2, Vector2]
+            for (let i = 0; i < vertices.length - 1; ++i) {
+                yield [vertices[i]!, vertices[i + 1]!] satisfies [Vector2, Vector2]
             }
         }
         let last = Vector2.zero;;
         let go = (distance: number, turn: Angle) => {
             last = Vector2.polar(distance, last.theta.add(turn));
             let v = peek().add(last);
-            verticies.push(v);
+            vertices.push(v);
             return v;
         }
         let goto = (v: Vector2) => {
             last = v.subtract(peek());
-            verticies.push(v);
+            vertices.push(v);
         }
 
         const { start_angle, start_length, angle1, radius1, radius2, neck_length, flip } = params;
@@ -113,9 +113,10 @@ const ear_pattern: PatternMaker<FIELDS> = {
         }
 
         peek(last => {
+            if (!params.offset) return;
 
             let list: Vector2[] = [];
-            for (let [a, b] of pairs()) {
+            for (let [ a, b ] of pairs()) {
                 let p = b.subtract(a).rotate(Angle.degree(90)).scale_to(params.offset);
                 list.push(a.add(p));
                 list.push(b.add(p));
@@ -129,7 +130,34 @@ const ear_pattern: PatternMaker<FIELDS> = {
                 drawable.trace(list.map(v => v.mirror(Vector2.x(last.x), last)).map(v => v.mirror(Vector2.zero, Vector2.y(last.y))));
                 drawable.trace(list.map(v => v.mirror(Vector2.y(-1), Vector2.zero)));
             });
-        })
+        });
+
+        drawable.session(() => {
+            let interval = 3.38;
+            let tooth_size = 2;
+            let hole_offset = 2;
+            let hole_angle = 40;
+            let d = hole_offset + tooth_size / 2 * Angle.degree(hole_angle).sin();
+            let last = Vector2.y(d);
+            punch(last, Angle.degree(-params.start_angle));
+            for (let [ a, b ] of pairs()) {
+                let direction = b.subtract(a);
+                let p = direction.rotate(Angle.degree(90)).scale_to(d);
+                a = a.add(p);
+                if (a.subtract(last).r > interval) {
+                    a = last.add(a.subtract(last).scale_to(interval));
+                    punch(a, direction.theta);
+                    punch(a.flip_y(), direction.flip_y().theta);
+                    last = a;
+                }
+            }
+
+            function punch(pos: Vector2, direction: Angle) {
+                let tooth = Vector2.polar(tooth_size / 2, direction.add(Angle.degree(hole_angle)));
+                drawable.line(pos, pos.add(tooth));
+                drawable.line(pos, pos.add(tooth.scale(-1)));
+            }
+        });
 
         go(neck_length / 2, Angle.zero);
 
@@ -159,28 +187,28 @@ const ear_pattern: PatternMaker<FIELDS> = {
                 drawable.ctx.strokeStyle = 'gray';
                 drawable.line(v, Vector2.cartesion(v.x, 0));
                 drawable.line(v_mirror, Vector2.cartesion(-v.x, 0));
-                drawable.line(verticies[0]!, Vector2.y(v.y))
+                drawable.line(vertices[0]!, Vector2.y(v.y))
             })
 
             let to_add: Vector2[] = [];
             for (let i = 0; i < flip; ++i) {
-                let m = verticies[verticies.length - 1 - i];
+                let m = vertices[vertices.length - 1 - i];
                 if (!m) break;
                 to_add.push(Vector2.cartesion(m.x, v.y + v.y - m.y));
             }
-            verticies = verticies.concat(to_add);
+            vertices = vertices.concat(to_add);
 
         });
 
         goto(Vector2.cartesion(1, peek().y));
 
-        for (let i = verticies.length - 1; ; --i) {
-            let v = verticies[i];
+        for (let i = vertices.length - 1; ; --i) {
+            let v = vertices[i];
             if (!v) break;
-            verticies.push(Vector2.cartesion(-v.x, v.y));
+            vertices.push(Vector2.cartesion(-v.x, v.y));
         }
 
-        drawable.trace(verticies);
+        drawable.trace(vertices);
 
         function measure_length(
             from: Vector2,
@@ -206,7 +234,7 @@ const ear_pattern: PatternMaker<FIELDS> = {
                 drawable.line(to, to.add(length.rotate(Angle.degree( 90)).scale_to(end_size)));
                 drawable.line(to, to.add(length.rotate(Angle.degree(-90)).scale_to(end_size)));
 
-                let text = `${ length.r.toFixed(2) } mm`;
+                let text = `${ length.r.toFixed(1) } mm`;
                 let anchor = from.add(to.subtract(from).scale(options?.anchor ?? 0.5));
                 let text_pos = anchor.add(options?.offset ?? Vector2.zero);
                 drawable.line(anchor, text_pos);

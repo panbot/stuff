@@ -28,7 +28,7 @@ export class Drawable {
         public width_mm: number,
         public height_mm: number,
         public dpi: number,
-        public scale: number,
+        public scale: [ number, number ],
     ) {
         this.ctx = canvas.getContext('2d') ?? bail('2d context not supported');
 
@@ -45,7 +45,7 @@ export class Drawable {
         canvas.width  = this.width.px;
         canvas.height = this.height.px;
 
-        this.ctx.setTransform(scale, 0, 0, scale, this.width.px / 2 * scale, this.height.px / 2 * scale);
+        this.ctx.setTransform(scale[0], 0, 0, scale[1], this.width.px / 2 * scale[0], this.height.px / 2 * scale[1]);
     }
 
     clear() {
@@ -80,10 +80,10 @@ export class Drawable {
 
         if (options?.arrow) {
             let angle = options.arrow.angle ?? Angle.degree(60);
-            let size = options.arrow.size ?? 1;
+            let size = options.arrow.size ?? 5;
 
             let v = to.subtract(from);
-            let arm = v.rotate(Angle.degree(180).subtract(angle.scale(0.5))).scale_to(size * ppm);
+            let arm = v.rotate(Angle.degree(180).subtract(angle.scale(0.5))).scale_to(size);
             ctx.lineTo(...xy(to.add(arm)));
 
             arm = arm.rotate(angle);
@@ -94,18 +94,18 @@ export class Drawable {
         ctx.stroke();
     }
 
-    trace(verticies: Vector2[], close?: boolean) {
+    trace(vertices: readonly Vector2[], close?: boolean) {
         const { ctx, xy } = this;
 
-        let start = verticies[0];
+        let start = vertices[0];
         if (!start) return;
 
         ctx.beginPath();
 
         ctx.moveTo(...xy(start));
 
-        for (let i = 1; i < verticies.length; ++i) {
-            ctx.lineTo(...xy(verticies[i]!));
+        for (let i = 1; i < vertices.length; ++i) {
+            ctx.lineTo(...xy(vertices[i]!));
         }
 
         if (close) ctx.closePath();
@@ -113,20 +113,19 @@ export class Drawable {
         ctx.stroke();
     }
 
-    arc(pos: Vector2, radius: number, start_angle?: Angle, end_angle?: Angle) {
-        const { ctx, xy, ppm } = this;
-
-        start_angle = start_angle ?? Angle.zero;
-        end_angle = end_angle ?? Angle.radian(Math.PI * 2);
+    arc(start: Vector2, direction: Vector2, radius: number, angle: Angle) {
+        const { ctx, xy } = this;
 
         ctx.beginPath();
-        ctx.arc(
-            ...xy(pos),
-            radius * ppm,
-            Math.PI * 2 - start_angle.radian,
-            Math.PI * 2 - end_angle.radian,
-            true,
-        );
+
+        ctx.moveTo(...xy(start));
+
+        let center = start.add(direction.rotate(Angle.degree(90)).scale_to(radius));
+        let start_deg = start.subtract(center).theta.degree;
+        for (let i = 0; i <= angle.degree; ++i) {
+            ctx.lineTo(...xy(center.add(Vector2.polar(radius, Angle.degree(start_deg + i)))));
+        }
+
         ctx.stroke();
     }
 
@@ -159,11 +158,20 @@ export class Drawable {
         })
     }
 
-    session<T>(cb: (drawable: Drawable) => T) {
+    session<T>(
+        cb: (ctx: CanvasRenderingContext2D, drawable: Drawable) => T,
+        transform?: [ transition: Vector2, rotation: Angle ],
+    ) {
         this.ctx.save();
 
         try {
-            return cb(this);
+            let drawable = Object.create(this);
+            let xy = this.xy;
+            if (transform) {
+                let [ transition, rotation ] = transform;
+                drawable.xy = (v: Vector2) => xy(v.rotate(rotation).add(transition));
+            }
+            return cb(this.ctx, drawable);
         } catch (e) {
             throw e;
         } finally {

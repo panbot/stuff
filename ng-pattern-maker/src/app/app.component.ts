@@ -12,6 +12,11 @@ import badge_holder from './patterns/badge-holder';
 import { Vector2 } from './lib/vector2';
 import calibration from './patterns/calibration';
 import capsule_hole from './patterns/capsule';
+import tapered_ear from './patterns/tapered-ear';
+import tissue_box from './patterns/tissue-box';
+import diamond_grid from './patterns/diamond-grid';
+import fiddle from './patterns/fiddle';
+import qianyu from './patterns/qianyu';
 
 @Component({
     selector: 'app-root',
@@ -44,7 +49,12 @@ export class AppComponent implements OnInit {
         'Ear': ear_pattern,
         'Badge Holder': badge_holder,
         'Capsule Hole': capsule_hole,
+        'Tapered Ear': tapered_ear,
+        'Tissue Box': tissue_box,
+        'Diamond Grid': diamond_grid,
         'Calibration': calibration,
+        'Qianyu': qianyu,
+        'Fiddler': fiddle,
     };
 
     pattern_entries = Object.entries(this.patterns);
@@ -102,7 +112,7 @@ export class AppComponent implements OnInit {
             canvas.style.height = 'unset';
         }
 
-        let drawable = new Drawable(canvas, size.x, size.y, dpi, size.y / 289);
+        let drawable = new Drawable(canvas, size.x, size.y, dpi, [ size.y / 288, size.y / 288.65 ]);
         drawable.clear();
 
         if (!this.pattern) return;
@@ -110,7 +120,8 @@ export class AppComponent implements OnInit {
         this.pattern.draw(drawable, this.query);
 
         {
-            let top_left = Vector2.cartesion(-size.x / 2 + 2, size.y / 2 - 1);
+            let padding = 2;
+            let top_left = Vector2.cartesion(-size.x / 2 + padding, size.y / 2 - padding);
             drawable.line(top_left, top_left.add(Vector2.x(300)));
             drawable.line(top_left, top_left.add(Vector2.y(-300)));
             for (let i = 0; i < 300; ++i) {

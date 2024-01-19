@@ -1,16 +1,15 @@
 import { PatternMaker } from ".";
 import { Angle } from "../lib/angle";
+import { utils } from "../lib/utils";
 import { Vector2 } from "../lib/vector2";
+import capsule_hole from "./capsule";
 
 type FIELDS
     = 'width'
     | 'height'
     | 'offset'
+    | 'shoulder'
     | 'radius'
-    | 'head'
-    | 'punch_interval'
-    | 'ear'
-    | 'fold_top'
 ;
 
 type CORNERS = [ Vector2, Vector2, Vector2, Vector2 ];
@@ -20,189 +19,170 @@ let badge_holder: PatternMaker<FIELDS> = {
         name: 'width',
         label: 'Card Width',
         unit: 'mm',
-        default_value: 54,
+        default_value: 54.5,
     }, {
         name: 'height',
         label: 'Card Height',
         unit: 'mm',
-        default_value: 86,
+        default_value: 87.5,
     }, {
         name: 'offset',
         label: 'Offset',
         unit: 'mm',
-        default_value: 6,
+        default_value: 7,
+    }, {
+        name: 'shoulder',
+        label: 'Shoulder',
+        unit: 'mm',
+        default_value: 7,
     }, {
         name: 'radius',
         label: 'Radius',
         unit: 'mm',
-        default_value: 4,
-    }, {
-        name: 'head',
-        label: 'Head',
-        unit: 'mm',
-        default_value: 7,
-    }, {
-        name: 'punch_interval',
-        label: 'Punch Interval',
-        unit: 'mm',
         default_value: 3,
-    }, {
-        name: 'ear',
-        label: 'Ear',
-        unit: 'mm',
-        default_value: 9,
-    }, {
-        name: 'fold_top',
-        label: 'Fold Top',
-        unit: 'mm',
-        default_value: 33,
     }],
     draw(drawable, params) {
+        const stitch_margin = 2;
 
-        let card_corner = Vector2.cartesion(params.width / 2, params.height / 2);
-        let card_corners = get_rect(card_corner);
-        drawable.session(() => {
-            drawable.ctx.setLineDash([ 5, 3 ]);
-            draw_rect(card_corners);
+        const card_corners = utils.get_rect(params.width, params.height);
+
+        drawable.session((ctx, drawable) => {
+            ctx.setLineDash([ 5, 5 ]);
+            drawable.trace(card_corners, true);
         });
-        draw_rect(offset(get_rect(card_corner), -5), 5);
 
-        let offset_corner = Vector2.cartesion(card_corner.x + params.offset, card_corner.y + params.offset);
-        let offset_corners = get_rect(offset_corner);
+        let window_offset = 7;
+        const window = utils.offset(card_corners, -window_offset);
+        drawable.trace(utils.round_corners(window, 5), true);
 
-        let corners: CORNERS = [
-            offset_corners[0].add(Vector2.y(params.head)),
-            offset_corners[1].add(Vector2.y(params.head)),
-            offset_corners[2],
-            offset_corners[3] ,
-        ];
-        if (params.head) {
-            drawable.line(offset_corners[0], offset_corners[1]);
-        }
-        draw_rect(corners, params.radius);
+        const offset = utils.offset(card_corners, params.offset);
+        let [ a, b, c, d ] = offset;
+        drawable.line(a, b);
+        drawable.trace(utils.round_corners(
+            [ b, c, d, a ],
+            params.radius,
+            { flags: utils.FLAGS.NOWRAP }
+        ));
 
-        if (params.ear) {
-            drawable.line(
-                Vector2.cartesion(params.ear / 2, corners[0].y),
-                Vector2.cartesion(params.ear / 2, corners[0].y).add(Vector2.y(-5)),
-            );
-            drawable.line(
-                Vector2.cartesion(-params.ear / 2, corners[0].y),
-                Vector2.cartesion(-params.ear / 2, corners[0].y).add(Vector2.y(-5)),
-            );
-        }
-
-        if (params.fold_top) {
-            drawable.trace([
-                Vector2.cartesion(params.fold_top / 2, corners[0].y),
-                Vector2.cartesion(params.fold_top / 2, corners[0].y).add(Vector2.y(10)),
-                Vector2.cartesion(-params.fold_top / 2, corners[0].y).add(Vector2.y(10)),
-                Vector2.cartesion(-params.fold_top / 2, corners[0].y),
-            ])
-        }
-
-
-        const hole_to_edge = 3;
         {
-            let punch_corners = offset(corners, -hole_to_edge);
-            for (let [ a, b ] of pairs(punch_corners)) {
-                stitch(a, b, { skip: 1 });
-            }
+            let start_offset = 1;
+            let end_offset = 1;
+            let offset = stitch_margin;
+            let skip = 1;
+            utils.stitch(drawable, b, c, { start_offset, end_offset, offset });
+            utils.stitch(drawable, c, d, { start_offset, end_offset, offset, skip });
+            utils.stitch(drawable, d, a, { start_offset, end_offset, offset, skip });
         }
 
-        function stitch(
-            from: Vector2,
-            to: Vector2,
-            options?: {
-                offset?: number,
-                angle?: number,
-                size?: number,
-                skip?: number,
-            },
-        ) {
-            const angle = options?.angle ?? 40;
-            const size = options?.size ?? 1.5;
+        // magnets
+        {
+            let r = 1.5;
+            let d = r / Angle.degree(135 / 2).tan();
+            let v = card_corners[2].add(Vector2.cartesion(-r, r - d));
+            // drawable.arc(v, r, Angle.zero);
+            // drawable.text('N', v, { valign: 'middle' });
+            // v = card_corners[2].add(Vector2.cartesion(d, -r));
+            // drawable.arc(v, r, Angle.zero);
+            // drawable.text('S', v, { valign: 'middle' });
 
-            if (options?.offset) {
-                let d = to.subtract(from).scale_to(options.offset).rotate(Angle.degree(-90));
-                from = from.add(d);
-                to = to.add(d);
-            }
+            // v = card_corners[3].add(Vector2.cartesion(-d, -r));
+            // drawable.arc(v, r, Angle.zero);
+            // drawable.text('N', v, { valign: 'middle' });
 
-            let d = to.subtract(from).scale_to(params.punch_interval);
-            const punch = (v: Vector2) => {
-                drawable.line(v, v.add(d.scale_to(size / 2).rotate(Angle.degree(angle))));
-                drawable.line(v, v.add(d.scale_to(size / 2).rotate(Angle.degree(angle + 180))));
-            }
-
-            for (let i = 0; i < (options?.skip ?? 0); ++i) from = from.add(d);
-
-            while (Math.cos(to.subtract(from).theta.radian - d.theta.radian) > 0) {
-                punch(from);
-                from = from.add(d);
-            }
-            punch(to);
+            // v = card_corners[3].add(Vector2.cartesion(r, r - d));
+            // drawable.arc(v, r, Angle.zero);
+            // drawable.text('S', v, { valign: 'middle' });
         }
 
-        function* pairs(vertices: Vector2[]) {
-            for (let i = 0; i < vertices.length; ++i) {
-                yield [ vertices[i]!, vertices[(i + 1) % vertices.length]! ] as const
+        // capsule
+        drawable.session((ctx, d) => {
+            let length = 15;
+            let width = 4;
+
+            capsule_hole.draw(d, {
+                length,
+                width,
+                offset: 2,
+                holes: 5,
+                tooth: 2,
+                angle: 45,
+            })
+
+        }, [ offset[0].add(offset[1]).scale(0.5).add(Vector2.y(7)), Angle.degree(90) ])
+        // {
+        //     let width = 15;
+        //     let height = 4;
+        //     let center = offset[0].add(offset[1])
+        //                                .scale(0.5)
+        //                                .add(Vector2.y(7));
+
+        //     let hole = utils.get_rect(
+        //         width,
+        //         height,
+        //         center,
+        //     );
+        //     let round_corners = utils.round_corners(hole, height / 2 - 0.1);
+        //     drawable.trace(round_corners, true);
+        // }
+
+        // shoulder
+        {
+            let h1 = 9.5;
+            let h2 = 5;
+            let x1 = 10;
+            let x2 = 3;
+
+            let shoulder = [
+                offset[0].add(Vector2.zero),
+                offset[0].add(Vector2.y(h1)),
+                Vector2.cartesion(x1 + x2, offset[0].add(Vector2.y(h1)).y),
+                Vector2.cartesion(x1, offset[0].add(Vector2.y(h1 + h2)).y),
+            ];
+
+            shoulder = shoulder.concat([ ...shoulder ].reverse().map(v => v.flip_y()));
+
+            {
+                let x = shoulder[0]!;
+                let y = shoulder[1]!;
+                utils.stitch(drawable, x, y, {});
+
+                x = x.flip_y();
+                y = y.flip_y();
+                utils.stitch(drawable, y, x, { start_offset: 1, skip: 1 });
             }
-        }
 
-        function offset<T extends Vector2[]>(vertices: T, offset: number) {
-            return vertices.map((from, i) => {
-                let to   = vertices[(i + 1) % vertices.length]!;
-                let d = from.subtract(to).scale_to(offset);
-                return from.add(d.rotate(Angle.degree(90))).add(d)
-            }) as T
-        }
+            {
+                let x = shoulder[1]!;
+                let y = shoulder[2]!.subtract(Vector2.x(2.2));
+                utils.stitch(drawable, x, y, { start_offset: 1, skip: 1 });
 
-        function get_rect(corner: Vector2): CORNERS {
-            let [ x, y ]= corner.xy;
-            return [
-                Vector2.cartesion( x,  y),
-                Vector2.cartesion(-x,  y),
-                Vector2.cartesion(-x, -y),
-                Vector2.cartesion( x, -y),
-            ]
-        }
-
-        function draw_rect(
-            corners: CORNERS,
-            radius?: number,
-        ){
-            if (!radius) {
-                drawable.trace(corners, true);
-            } else {
-                for (let i = 0; i < 4; ++i) {
-                    let from = corners[i]!;
-                    let to = corners[(i + 1) % 4]!;
-                    let start_angle = Angle.degree(Math.floor(from.theta.normalize().degree / 90) * 90);
-                    let end_angle = start_angle.add(Angle.degree(90));
-
-                    let r = Vector2.polar(radius, start_angle);
-
-                    drawable.line(from.subtract(r), to.add(r));
-
-                    drawable.line(from.subtract(r), from.subtract(r).add(r.rotate(Angle.degree( 90)).scale_to(0.5)));
-                    drawable.line(from.subtract(r), from.subtract(r).add(r.rotate(Angle.degree(-90)).scale_to(0.5)));
-
-                    drawable.line(to.add(r), to.add(r).add(r.rotate(Angle.degree( 90)).scale_to(0.5)));
-                    drawable.line(to.add(r), to.add(r).add(r.rotate(Angle.degree(-90)).scale_to(0.5)));
-
-                    drawable.arc(
-                        from.subtract(r).add(r.rotate(Angle.degree(-90))),
-                        r.r,
-                        start_angle,
-                        end_angle,
-                    );
-                }
+                x = x.flip_y();
+                y = y.flip_y();
+                utils.stitch(drawable, y, x, { start_offset: 1 });
             }
 
-            return corners;
-        }
+            // let shoulder: Vector2[] = [];
+            // let x = offset[0];
+            // let y = x.add(Vector2.y(hole_margin + height / 2 + stitch_margin * 2));
+            // shoulder.push(x, y);
+            // utils.stitch(drawable, x, y, {});
 
+            // x = y;
+            // y = Vector2.cartesion(width / 2, y.y);
+            // shoulder.push(y);
+            // utils.stitch(drawable, x, y, { start_offset: 1, skip: 1 });
+
+
+
+            // shoulder = shoulder.concat([ ...shoulder ].reverse().map(v => v.flip_y()));
+            drawable.trace(
+                utils.round_corners(
+                    shoulder,
+                    params.radius,
+                    { flags: utils.FLAGS.NOWRAP },
+                )
+            );
+        }
     },
 }
 

@@ -124,10 +124,59 @@ export class Vector2 {
         return new Vector2(
             r * Math.cos(theta.radian),
             r * Math.sin(theta.radian),
-            r,
-            theta,
+            Math.abs(r),
+            r >= 0 ? theta : theta.add(Angle.PI),
         );
     }
 
     static zero = new Vector2(0, 0, 0, Angle.zero);
+}
+
+export namespace Vector2 {
+
+    export type TWO = [ Vector2, Vector2 ];
+    export type FOUR = [ ...TWO, ...TWO ];
+
+    export function find_cross(
+        [ a, b ]: [ Vector2, Vector2 ],
+        [ c, d ]: [ Vector2, Vector2 ],
+    ) {
+        check_line(a, b);
+        check_line(c, d);
+
+        let l1 = b.subtract(a);
+        let l2 = d.subtract(c);
+
+        let a1 = l1.theta.normalize().radian;
+        let a2 = l2.theta.normalize().radian;
+
+        // parallel
+        if (Math.abs(a1 - a2) < 1e-9) return;
+
+        // transform to new axis where a is the center, l1 points to y
+        let rotation = Angle.degree(90 - l1.theta.degree);
+        let transition = a.scale(-1);
+
+        [ c, d ] = transform([ c, d ], transition, rotation);
+        // y = kx + l
+        let k = (c.y - d.y) / (c.x - d.x);
+        let l = c.y - k * c.x;
+        let cross = Vector2.y(l);
+
+        return transform([ cross ], transition, rotation, true)[0]
+
+        function check_line(a: Vector2, b: Vector2) {
+            if (a.subtract(b).r < 1e-9) throw new Error(`[ ${ a.xy }, ${b.xy} ] is not a line`);
+        }
+
+        function transform<T extends Vector2[]>(
+            vertices: T,
+            transition: Vector2,
+            rotate: Angle,
+            reverse = false
+        ): T {
+            if (!reverse) return vertices.map(v => v.add(transition).rotate(rotate)) as any
+            return vertices.map(v => v.rotate(rotate.scale(-1)).subtract(transition)) as any
+        }
+    }
 }

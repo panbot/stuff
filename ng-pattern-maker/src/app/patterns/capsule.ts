@@ -31,7 +31,7 @@ const capsule_hole: PatternMaker<FIELDS> = {
     }, {
         name: 'holes',
         label: 'Holes',
-        default_value: 10,
+        default_value: 5,
     }, {
         name: 'tooth',
         label: 'Tooth Size',
@@ -47,18 +47,18 @@ const capsule_hole: PatternMaker<FIELDS> = {
     draw(drawable, params) {
         capsule(params.length, params.width);
 
-        drawable.session(() => {
-            drawable.ctx.strokeStyle = '#aaa';
-            capsule(params.length + params.offset * 2, params.width + params.offset * 2);
-        });
+        // drawable.session(() => {
+        //     drawable.ctx.strokeStyle = '#aaa';
+        //     capsule(params.length + params.offset * 2, params.width + params.offset * 2);
+        // });
 
         {
             let d = Math.sin(Angle.degree(params.angle).radian) * params.tooth / 2;
 
-            drawable.session(() => {
-                drawable.ctx.strokeStyle = '#aaa';
-                capsule(params.length + params.offset * 2 + d * 2, params.width + params.offset * 2 + d * 2);
-            });
+            // drawable.session(() => {
+            //     drawable.ctx.strokeStyle = '#aaa';
+            //     capsule(params.length + params.offset * 2 + d * 2, params.width + params.offset * 2 + d * 2);
+            // });
 
             let h1 = (params.length - params.width) / 2;
             let r = params.width / 2 + params.offset + d;
@@ -71,7 +71,7 @@ const capsule_hole: PatternMaker<FIELDS> = {
             punch(Vector2.y( h1 + r), Angle.degree(180));
             punch(Vector2.y(-h1 - r), Angle.degree(360));
 
-            for (let i = 0; i < s; i += interval) {
+            for (let i = interval; i < s; i += interval) {
                 if (i <= h1) {
                     punch(Vector2.cartesion( r,  i), Angle.degree( 90));
                     punch(Vector2.cartesion( r, -i), Angle.degree( 90));
@@ -95,10 +95,10 @@ const capsule_hole: PatternMaker<FIELDS> = {
             let r = width / 2;
             let c = length / 2 - r;
 
-            drawable.arc(Vector2.y(-c), r, Angle.degree(180), Angle.zero);
             drawable.line(Vector2.cartesion( r, -c), Vector2.cartesion( r, c));
+            drawable.arc(Vector2.cartesion( r,  c), Vector2.y(1), r, Angle.PI);
             drawable.line(Vector2.cartesion(-r, -c), Vector2.cartesion(-r, c));
-            drawable.arc(Vector2.y(c), r, Angle.zero, Angle.degree(180));
+            drawable.arc(Vector2.cartesion(-r, -c), Vector2.y(-1), r, Angle.PI);
         }
 
         function punch(pos: Vector2, direction: Angle) {
